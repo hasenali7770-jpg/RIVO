@@ -1,6 +1,5 @@
 import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, ParseUUIDPipe, Post } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { Throttle } from '@nestjs/throttler';
 import { IsIn, IsInt, IsString, Max, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 import { PROPERTY_PHOTO_MAX, PROPERTY_PHOTO_MAX_BYTES, PROPERTY_PHOTO_MIN } from '@rivo/config';
@@ -12,6 +11,7 @@ import {
   RequestEnhancementDto,
   SelectMediaVersionDto,
 } from './dto/media.dto';
+import { RateLimit } from '../../common/rate-limit/rate-limit.decorator';
 
 class PresignUserAssetDto {
   @IsString()
@@ -33,7 +33,7 @@ class PresignUserAssetDto {
 export class MediaController {
   constructor(private readonly media: MediaService) {}
 
-  @Throttle({ write: { limit: 30, ttl: 60_000 } })
+  @RateLimit('write', { limit: 30, ttl: 60_000 })
   @Post('uploads/images/presign')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({

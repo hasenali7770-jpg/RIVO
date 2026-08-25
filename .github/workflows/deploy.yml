@@ -1,0 +1,100 @@
+name: Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Target environment
+        required: true
+        default: staging
+        type: choice
+        options: [staging, production]
+      ref:
+        description: Git ref to deploy (a tag, or a commit SHA to roll back to)
+        required: false
+        default: ''
+
+# One deployment at a time per environment. Two concurrent deploys racing over
+# the same droplet is how a half-migrated database happens.
+concurrency:
+  group: deploy-${{ inputs.environment }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy to ${{ inputs.environment }}
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || github.ref }}
+
+      - name: Record the ref being deployed
+        id: meta
+        run: |
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          echo "short=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+          echo "Deploying $(git rev-parse --short HEAD) to ${{ inputs.environment }}"
+
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script_stop: true
+          script: |
+            set -euo pipefail
+            cd /opt/rivo
+
+            # The previous SHA is captured before anything changes, so a rollback
+            # target exists even if this deploy fails halfway.
+            PREVIOUS=$(git rev-parse HEAD)
+            echo "$PREVIOUS" > .last-deploy
+            echo "Current: $PREVIOUS -> target: ${{ steps.meta.outputs.sha }}"
+
+            git fetch --all --tags
+            git checkout ${{ steps.meta.outputs.sha }}
+
+            # Build before stopping anything, so a failed build leaves the
+            # running version untouched.
+            docker compose build api worker admin
+
+            # Migrations run before the new code starts. They are written to be
+            # additive, so the old version keeps working against the new schema
+            # during the seconds between these two steps.
+            docker compose run --rm api npx prisma migrate deploy
+
+            docker compose up -d --no-deps api worker admin
+            docker image prune -f
+
+      - name: Verify the deployment is healthy
+        run: |
+          echo "Waiting for the API to report healthy…"
+          for attempt in $(seq 1 30); do
+            if curl -fsS "${{ secrets.DEPLOY_HEALTH_URL }}" | grep -q '"status":"ok"'; then
+              echo "Healthy after ${attempt} attempt(s)."
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "::error::The API did not report healthy within 150 seconds. Roll back with the rollback workflow."
+          exit 1
+
+  rollback-instructions:
+    name: How to roll back
+    runs-on: ubuntu-latest
+    needs: deploy
+    if: failure()
+    steps:
+      - name: Print rollback command
+        run: |
+          echo "::error::Deployment failed. To roll back, re-run this workflow with:"
+          echo "  environment: ${{ inputs.environment }}"
+          echo "  ref: the previously deployed SHA, which is in /opt/rivo/.last-deploy on the droplet"
+          echo ""
+          echo "Migrations are additive, so rolling the application back does not"
+          echo "require rolling the database back. If a migration itself is the"
+          echo "problem, see docs/deployment/BACKUP_RESTORE.md."

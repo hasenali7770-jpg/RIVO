@@ -1,11 +1,11 @@
 import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { Throttle } from '@nestjs/throttler';
 import { Transform, Type } from 'class-transformer';
 import { IsArray, IsIn, IsLatitude, IsLongitude, IsNumber, IsOptional, IsString, IsUUID, Max, MaxLength, Min } from 'class-validator';
 import { LISTING_PURPOSES, PROPERTY_TYPES, REEL_MIN_SHORT_EDGE } from '@rivo/config';
 import { ReelsService } from './reels.service';
 import { AuthenticatedUser, CurrentUser, OptionalAuth } from '../../common/decorators';
+import { RateLimit } from '../../common/rate-limit/rate-limit.decorator';
 
 class CreateReelUploadDto {
   @IsUUID('4')
@@ -109,7 +109,7 @@ export class ReelsController {
   }
 
   @ApiBearerAuth()
-  @Throttle({ write: { limit: 10, ttl: 3600_000 } })
+  @RateLimit('write', { limit: 10, ttl: 3600_000 })
   @Post('upload')
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({

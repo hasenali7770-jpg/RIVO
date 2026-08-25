@@ -1,10 +1,10 @@
 import { Body, Controller, Get, HttpCode, HttpStatus, Param, ParseUUIDPipe, Post, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { Throttle } from '@nestjs/throttler';
 import { INCIDENT_TYPES, TELEMETRY_RAW_RETENTION_DAYS } from '@rivo/config';
 import { TrafficService } from './traffic.service';
 import { AuthenticatedUser, CurrentUser, OptionalAuth } from '../../common/decorators';
 import { ConfirmIncidentDto, CreateIncidentDto, ListIncidentsDto, TelemetryBatchDto } from './dto/traffic.dto';
+import { RateLimit } from '../../common/rate-limit/rate-limit.decorator';
 
 @ApiTags('traffic')
 @Controller('traffic')
@@ -22,7 +22,7 @@ export class TrafficController {
   }
 
   @ApiBearerAuth()
-  @Throttle({ write: { limit: 20, ttl: 3600_000 } })
+  @RateLimit('write', { limit: 20, ttl: 3600_000 })
   @Post('incidents')
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
@@ -58,7 +58,7 @@ export class TrafficController {
   }
 
   @ApiBearerAuth()
-  @Throttle({ write: { limit: 120, ttl: 3600_000 } })
+  @RateLimit('write', { limit: 120, ttl: 3600_000 })
   @Post('telemetry/batch')
   @HttpCode(HttpStatus.ACCEPTED)
   @ApiOperation({

@@ -1,9 +1,9 @@
 import { Body, Controller, Get, HttpCode, HttpStatus, Param, ParseUUIDPipe, Post, Query } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { Throttle } from '@nestjs/throttler';
 import { MapsService } from './maps.service';
 import { AuthenticatedUser, CurrentUser, OptionalAuth } from '../../common/decorators';
 import { RouteFeedbackDto, RouteRequestDto, SearchPlacesDto } from './dto/maps.dto';
+import { RateLimit } from '../../common/rate-limit/rate-limit.decorator';
 
 @ApiTags('maps')
 @Controller('maps')
@@ -11,7 +11,7 @@ export class MapsController {
   constructor(private readonly maps: MapsService) {}
 
   @OptionalAuth()
-  @Throttle({ routing: { limit: 60, ttl: 60_000 } })
+  @RateLimit('routing', { limit: 60, ttl: 60_000 })
   @Get('search')
   @ApiOperation({
     summary: 'Search for a place in Iraq',
@@ -24,7 +24,7 @@ export class MapsController {
   }
 
   @OptionalAuth()
-  @Throttle({ routing: { limit: 30, ttl: 60_000 } })
+  @RateLimit('routing', { limit: 30, ttl: 60_000 })
   @Post('routes')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({

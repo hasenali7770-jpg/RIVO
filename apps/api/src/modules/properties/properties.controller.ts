@@ -1,6 +1,5 @@
 import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { Throttle } from '@nestjs/throttler';
 import { PROPERTY_PHOTO_MAX, PROPERTY_PHOTO_MIN } from '@rivo/config';
 import { PropertiesService } from './properties.service';
 import { AuthenticatedUser, CurrentUser, OptionalAuth } from '../../common/decorators';
@@ -11,6 +10,7 @@ import {
   SearchPropertiesDto,
   UpdatePropertyDto,
 } from './dto/property.dto';
+import { RateLimit } from '../../common/rate-limit/rate-limit.decorator';
 
 @ApiTags('properties')
 @Controller('properties')
@@ -86,7 +86,7 @@ export class PropertiesController {
   // --- Create and edit -------------------------------------------------------
 
   @ApiBearerAuth()
-  @Throttle({ write: { limit: 20, ttl: 60_000 } })
+  @RateLimit('write', { limit: 20, ttl: 60_000 })
   @Post()
   @ApiOperation({ summary: 'Create a draft listing' })
   create(@CurrentUser() user: AuthenticatedUser, @Body() dto: CreatePropertyDto) {
@@ -180,7 +180,7 @@ export class PropertiesController {
   }
 
   @OptionalAuth()
-  @Throttle({ write: { limit: 10, ttl: 3600_000 } })
+  @RateLimit('write', { limit: 10, ttl: 3600_000 })
   @Post(':id/report')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Report a listing as fake, misleading or offensive' })

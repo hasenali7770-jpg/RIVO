@@ -15,6 +15,8 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { SkipThrottle } from '@nestjs/throttler';
+
+import { RateLimit } from '../../common/rate-limit/rate-limit.decorator';
 import type { AdminRole } from '@prisma/client';
 import { AdminAuthGuard } from '../../common/guards/admin-auth.guard';
 import {
@@ -73,10 +75,12 @@ export class AdminController {
   // --- Session ---------------------------------------------------------------
 
   @Public()
-  // Only the adminAuth budget applies here (ADMIN_LOGIN_ATTEMPTS_PER_5MIN per IP).
-  // The real brute-force defence is the per-account lockout in AdminAuthService,
-  // which an attacker cannot evade by rotating addresses.
-  @SkipThrottle({ default: true, otp: true, routing: true, write: true })
+  // Only the adminAuth budget applies here (ADMIN_LOGIN_ATTEMPTS_PER_5MIN per IP,
+  // taken from the module configuration). The real brute-force defence is the
+  // per-account lockout in AdminAuthService, which an attacker cannot evade by
+  // rotating addresses.
+  @SkipThrottle({ default: true })
+  @RateLimit('adminAuth')
   @Post('auth/login')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({

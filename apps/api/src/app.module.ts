@@ -1,10 +1,11 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
-import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { ScheduleModule } from '@nestjs/schedule';
 import { LoggerModule } from 'nestjs-pino';
 
 import { EnvModule } from './common/env/env.module';
+import { RivoThrottlerGuard } from './common/rate-limit/rivo-throttler.guard';
 import { EnvService } from './common/env/env.service';
 import { PrismaModule } from './common/prisma/prisma.module';
 import { RedisModule } from './common/redis/redis.module';
@@ -85,7 +86,8 @@ import { AdminModule } from './modules/admin/admin.module';
               ttl: env.get('RATE_LIMIT_WINDOW_SECONDS') * 1000,
               limit: relaxed ? 100_000 : env.get('RATE_LIMIT_MAX_REQUESTS'),
             },
-            // Named budgets referenced by @Throttle on individual routes.
+            // Named budgets. RivoThrottlerGuard charges each of these only to the
+            // routes that opted in with @RateLimit — see rate-limit.decorator.ts.
             { name: 'otp', ttl: 3600_000, limit: relaxed ? 100_000 : 6 },
             {
               name: 'routing',
@@ -134,7 +136,7 @@ import { AdminModule } from './modules/admin/admin.module';
     { provide: APP_INTERCEPTOR, useClass: BigIntInterceptor },
     // Order matters: rate limiting runs before authentication so an unauthenticated
     // flood is rejected without touching the database.
-    { provide: APP_GUARD, useClass: ThrottlerGuard },
+    { provide: APP_GUARD, useClass: RivoThrottlerGuard },
     { provide: APP_GUARD, useClass: JwtAuthGuard },
   ],
 })

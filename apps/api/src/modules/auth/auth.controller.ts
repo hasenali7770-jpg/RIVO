@@ -1,11 +1,11 @@
 import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Post } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import { TokenService } from './token.service';
 import { LogoutDto, RefreshTokenDto, RequestOtpDto, VerifyOtpDto } from './dto/auth.dto';
 import { AuthenticatedUser, ClientIp, CurrentUser, Public } from '../../common/decorators';
 import { Headers } from '@nestjs/common';
+import { RateLimit } from '../../common/rate-limit/rate-limit.decorator';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -18,7 +18,7 @@ export class AuthController {
   @Public()
   // A second, tighter budget on top of the per-phone and per-IP limits inside
   // AuthService. This one stops a flood before it reaches Redis or the SMS vendor.
-  @Throttle({ otp: { limit: 6, ttl: 3600_000 } })
+  @RateLimit('otp', { limit: 6, ttl: 3600_000 })
   @Post('request-otp')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
@@ -34,7 +34,7 @@ export class AuthController {
   }
 
   @Public()
-  @Throttle({ otp: { limit: 20, ttl: 3600_000 } })
+  @RateLimit('otp', { limit: 20, ttl: 3600_000 })
   @Post('verify-otp')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Exchange a one-time code for an access and refresh token pair' })

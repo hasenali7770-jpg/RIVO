@@ -9,6 +9,7 @@ import {
 import { Prisma } from '@prisma/client';
 import type { Request, Response } from 'express';
 import * as Sentry from '@sentry/node';
+import { ThrottlerException } from '@nestjs/throttler';
 import { AppError, ErrorCode, ErrorCodeValue } from '../errors/app-error';
 
 interface ErrorEnvelope {
@@ -69,6 +70,12 @@ export class AllExceptionsFilter implements ExceptionFilter {
       this.logger.warn(`[${requestId}] ${request.method} ${request.url} -> ${status}: ${body.code}`);
     }
 
+    if (status === HttpStatus.TOO_MANY_REQUESTS && !response.getHeader('Retry-After')) {
+      // The throttler emits Retry-After-<budget> per named budget. Clients read
+      // the plain header, so mirror whichever budget actually fired.
+      response.setHeader('Retry-After', this.retryAfterSeconds(response));
+    }
+
     response.status(status).json(envelope);
   }
 
@@ -80,6 +87,21 @@ export class AllExceptionsFilter implements ExceptionFilter {
     if (exception instanceof AppError) {
       const payload = exception.getResponse() as { error: { code: string; message: string; messageAr?: string; details?: unknown } };
       return { status: exception.getStatus(), body: payload.error, isUnexpected: false };
+    }
+
+    if (exception instanceof ThrottlerException) {
+      // The framework's own message is the exception class name, which is not
+      // something to show a seller. Every other error in this API is bilingual;
+      // a 429 is the one users hit most often, so it must be too.
+      return {
+        status: HttpStatus.TOO_MANY_REQUESTS,
+        body: {
+          code: ErrorCode.RATE_LIMITED,
+          message: 'Too many requests. Please wait a moment and try again.',
+          messageAr: 'عدد المحاولات كبير. يرجى الانتظار قليلاً ثم المحاولة مرة أخرى.',
+        },
+        isUnexpected: false,
+      };
     }
 
     if (exception instanceof HttpException) {
@@ -176,6 +198,16 @@ export class AllExceptionsFilter implements ExceptionFilter {
           isUnexpected: true,
         };
     }
+  }
+
+  /** Longest wait among the named Retry-After-<budget> headers, in seconds. */
+  private retryAfterSeconds(response: Response): number {
+    const waits = Object.entries(response.getHeaders())
+      .filter(([name]) => name.toLowerCase().startsWith('retry-after-'))
+      .map(([, value]) => Number(value))
+      .filter((value) => Number.isFinite(value) && value > 0);
+
+    return waits.length > 0 ? Math.max(...waits) : 60;
   }
 
   private codeForStatus(status: number): string {
