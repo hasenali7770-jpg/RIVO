@@ -150,7 +150,12 @@ export const submitResponseSchema = z.object({
   id: z.string().uuid(),
   status: z.enum(PROPERTY_STATUSES),
   photoCount: z.number().int(),
-  nextStep: z.literal('PAYMENT'),
+  /**
+   * PAYMENT for a first submission, REVIEW when the listing's fee was already
+   * settled — a rejected listing that has been fixed and resubmitted skips the
+   * payment step because the fee is charged once per listing.
+   */
+  nextStep: z.enum(['PAYMENT', 'REVIEW']),
   message: z.string(),
   messageAr: z.string(),
 });

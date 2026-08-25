@@ -14,6 +14,9 @@ import { PropertyStatus } from '@prisma/client';
  *      ARCHIVED        SOLD      RENTED                             ▼
  *                                                                 DRAFT
  *
+ * A listing that was rejected and fixed re-enters review directly
+ * (`resubmitPaid`), because its fee was already settled the first time.
+ *
  * Two transitions are deliberately impossible:
  *   • AWAITING_PAYMENT → PENDING_REVIEW by anything except the payment layer.
  *   • anything → PUBLISHED except an admin approval from PENDING_REVIEW.
@@ -29,6 +32,11 @@ interface Transition {
 
 export const TRANSITIONS: Record<string, Transition> = {
   submit: { from: ['DRAFT', 'CHANGES_REQUESTED', 'REJECTED'], to: 'AWAITING_PAYMENT', actors: ['USER'] },
+  // A listing whose fee is already settled goes straight back to review when the
+  // seller resubmits. The fee is charged once per listing, so a moderator asking
+  // for a better photo must not send the listing back to a payment step that
+  // would refuse it (PAYMENT_ALREADY_PAID) and strand it there.
+  resubmitPaid: { from: ['DRAFT', 'CHANGES_REQUESTED', 'REJECTED'], to: 'PENDING_REVIEW', actors: ['USER'] },
   // Only the payment layer may perform this, and only after a verified webhook
   // (or an audited manual settlement by a finance operator).
   paymentSettled: { from: ['AWAITING_PAYMENT'], to: 'PENDING_REVIEW', actors: ['PAYMENT_WEBHOOK', 'ADMIN'] },

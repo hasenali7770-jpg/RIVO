@@ -191,6 +191,39 @@ export class PropertiesService {
       });
     }
 
+    // The listing fee is charged once. A listing that was rejected, fixed and
+    // resubmitted must not be sent back to the payment step: creating a second
+    // payment is refused with PAYMENT_ALREADY_PAID, which would leave the
+    // listing stuck in AWAITING_PAYMENT with no way out.
+    const settledPayment = await this.prisma.listingPayment.findFirst({
+      where: { propertyId, status: 'PAID' },
+      select: { id: true },
+    });
+
+    if (settledPayment) {
+      await this.prisma.property.update({
+        where: { id: propertyId },
+        data: { status: 'PENDING_REVIEW', submittedAt: new Date(), moderationReason: null },
+      });
+      await this.recordStatusEvent(
+        propertyId,
+        property.status,
+        'PENDING_REVIEW',
+        'USER',
+        userId,
+        'Resubmitted after moderation — listing fee already settled',
+      );
+
+      return {
+        id: propertyId,
+        status: 'PENDING_REVIEW' as PropertyStatus,
+        photoCount,
+        nextStep: 'REVIEW',
+        message: 'The listing is back with the review team. The fee was already paid.',
+        messageAr: 'تم إرسال الإعلان إلى المراجعة. رسوم النشر مدفوعة مسبقاً.',
+      };
+    }
+
     await this.prisma.property.update({
       where: { id: propertyId },
       data: { status: 'AWAITING_PAYMENT', submittedAt: new Date(), moderationReason: null },

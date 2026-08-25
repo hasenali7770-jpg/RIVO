@@ -147,6 +147,68 @@ describe('RIVO business rules (e2e)', () => {
   });
 
   // -------------------------------------------------------------------------
+  describe('the listing fee is charged once per listing', () => {
+    it('sends a resubmitted listing straight back to review when its fee is settled', async () => {
+      const id = await newDraft();
+      await givePhotos(prisma, id, 8);
+      await api(app).post(`/api/v1/properties/${id}/submit`).set(bearer(token)).expect(200);
+
+      const payment = await api(app)
+        .post('/api/v1/payments/listing/create')
+        .set(bearer(token))
+        .send({ propertyId: id })
+        .expect(201);
+      await prisma.listingPayment.update({
+        where: { id: payment.body.id },
+        data: { status: 'PAID', paidAt: new Date() },
+      });
+      await prisma.property.update({ where: { id }, data: { status: 'REJECTED' } });
+
+      await api(app).post(`/api/v1/properties/${id}/reopen`).set(bearer(token)).expect(200);
+      const res = await api(app).post(`/api/v1/properties/${id}/submit`).set(bearer(token)).expect(200);
+
+      // Sending it back to AWAITING_PAYMENT would strand it: creating a second
+      // payment is refused with PAYMENT_ALREADY_PAID, so there would be no way
+      // for the seller to get the fixed listing reviewed again.
+      expect(res.body.status).toBe('PENDING_REVIEW');
+      expect(res.body.nextStep).toBe('REVIEW');
+    });
+
+    it('still refuses a second payment for a listing that is already paid', async () => {
+      const id = await newDraft();
+      await givePhotos(prisma, id, 8);
+      await api(app).post(`/api/v1/properties/${id}/submit`).set(bearer(token)).expect(200);
+
+      const payment = await api(app)
+        .post('/api/v1/payments/listing/create')
+        .set(bearer(token))
+        .send({ propertyId: id })
+        .expect(201);
+      await prisma.listingPayment.update({
+        where: { id: payment.body.id },
+        data: { status: 'PAID', paidAt: new Date() },
+      });
+      await prisma.property.update({ where: { id }, data: { status: 'AWAITING_PAYMENT' } });
+
+      const res = await api(app)
+        .post('/api/v1/payments/listing/create')
+        .set(bearer(token))
+        .send({ propertyId: id })
+        .expect(409);
+      expect(res.body.error.code).toBe('PAYMENT_ALREADY_PAID');
+    });
+
+    it('still requires payment on a first submission', async () => {
+      const id = await newDraft();
+      await givePhotos(prisma, id, 8);
+      const res = await api(app).post(`/api/v1/properties/${id}/submit`).set(bearer(token)).expect(200);
+
+      expect(res.body.status).toBe('AWAITING_PAYMENT');
+      expect(res.body.nextStep).toBe('PAYMENT');
+    });
+  });
+
+  // -------------------------------------------------------------------------
   describe('an unpaid listing can never be published', () => {
     it('will not transition to PENDING_REVIEW without a settled payment', async () => {
       const id = await newDraft();

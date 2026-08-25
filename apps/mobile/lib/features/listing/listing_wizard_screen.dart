@@ -211,12 +211,26 @@ class _ListingWizardScreenState extends ConsumerState<ListingWizardScreen> {
     }
   }
 
-  /// Submits the listing, which moves it to AWAITING_PAYMENT and creates the
-  /// 3,000 IQD payment.
+  /// Submits the listing.
+  ///
+  /// A first submission moves it to AWAITING_PAYMENT and needs the 3,000 IQD
+  /// payment. A listing that was rejected, fixed and resubmitted goes straight
+  /// back to review — its fee was settled the first time — and the server says
+  /// so with `nextStep: REVIEW`. Asking for payment again would be refused with
+  /// PAYMENT_ALREADY_PAID and would show the seller an error for a submission
+  /// that actually succeeded.
   Future<void> _submitForPayment() async {
     setState(() => _busy = true);
     try {
-      await ref.read(propertiesRepositoryProvider).submit(_draft.propertyId!);
+      final Map<String, dynamic> submission =
+          await ref.read(propertiesRepositoryProvider).submit(_draft.propertyId!);
+
+      if (submission['nextStep'] == 'REVIEW') {
+        if (!mounted) return;
+        setState(() => _step = ListingStep.submitted);
+        return;
+      }
+
       final Map<String, dynamic> payment =
           await ref.read(paymentsRepositoryProvider).createListingPayment(_draft.propertyId!);
 
