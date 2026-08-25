@@ -165,6 +165,7 @@ around them.
 
 | | |
 | --- | --- |
+| **[Handover](./HANDOVER.md)** | **run, build and deploy commands, schema, endpoints, outstanding purchases, roadmap** |
 | [Architecture](./docs/architecture/ARCHITECTURE.md) | how the pieces fit, and why |
 | [API reference](./docs/api/ENDPOINTS.md) | 103 operations; `openapi.json` alongside it |
 | [Deployment](./docs/deployment/DEPLOYMENT.md) | server setup, TLS, first deploy |

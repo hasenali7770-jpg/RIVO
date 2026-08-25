@@ -156,6 +156,7 @@ DATABASE_URL='postgresql://postgres@127.0.0.1:5432/rivo_test?schema=public' \
 
 | | |
 | --- | --- |
+| **[وثيقة التسليم](./HANDOVER.md)** | **أوامر التشغيل والبناء والنشر، والمخطط، والواجهات، والمشتريات المتبقية، وخارطة الطريق** |
 | [المعمارية](./docs/architecture/ARCHITECTURE.md) | كيف تترابط الأجزاء ولماذا |
 | [مرجع الـAPI](./docs/api/ENDPOINTS.md) | ١٠٣ عملية، مع `openapi.json` |
 | [النشر](./docs/deployment/DEPLOYMENT.md) | إعداد الخادم وشهادات TLS وأول نشر |
