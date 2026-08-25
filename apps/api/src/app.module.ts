@@ -93,6 +93,11 @@ import { AdminModule } from './modules/admin/admin.module';
               limit: relaxed ? 100_000 : env.get('ROUTING_RATE_LIMIT_PER_MINUTE'),
             },
             { name: 'write', ttl: 60_000, limit: relaxed ? 100_000 : 30 },
+            {
+              name: 'adminAuth',
+              ttl: 300_000,
+              limit: relaxed ? 100_000 : env.get('ADMIN_LOGIN_ATTEMPTS_PER_5MIN'),
+            },
           ],
         };
       },

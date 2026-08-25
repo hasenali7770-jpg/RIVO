@@ -1,0 +1,13 @@
+**/node_modules
+**/dist
+**/.next
+**/coverage
+**/build
+.git
+.github
+docs
+apps/mobile
+.env
+.env.*
+!.env.example
+*.log

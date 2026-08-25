@@ -7,7 +7,9 @@
  * about them.
  */
 process.env.APP_ENV = 'test';
-process.env.LOG_LEVEL = process.env.LOG_LEVEL ?? 'silent';
+// Forced, not defaulted: a .env in the repo root would otherwise leave request
+// logging on and bury the test output.
+process.env.LOG_LEVEL = 'silent';
 process.env.API_BASE_URL = process.env.API_BASE_URL ?? 'http://localhost:3000';
 process.env.ADMIN_URL = process.env.ADMIN_URL ?? 'http://localhost:3002';
 process.env.JWT_ACCESS_SECRET =

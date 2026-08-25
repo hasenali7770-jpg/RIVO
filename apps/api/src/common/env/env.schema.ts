@@ -34,7 +34,9 @@ export const envSchema = z
     CORS_EXTRA_ORIGINS: z.string().default(''),
     APP_DEEP_LINK_SCHEME: z.string().default('rivo'),
     DEFAULT_TIMEZONE: z.string().default('Asia/Baghdad'),
-    LOG_LEVEL: z.enum(['trace', 'debug', 'info', 'warn', 'error', 'fatal']).default('info'),
+    // 'silent' is accepted so the test suite can suppress request logs; pino
+    // treats it as a real level.
+    LOG_LEVEL: z.enum(['trace', 'debug', 'info', 'warn', 'error', 'fatal', 'silent']).default('info'),
 
     // --- Data stores --------------------------------------------------------
     DATABASE_URL: z
@@ -118,6 +120,10 @@ export const envSchema = z
     RATE_LIMIT_WINDOW_SECONDS: int(1, 3600).default(60),
     RATE_LIMIT_MAX_REQUESTS: int(1, 10000).default(120),
     ROUTING_RATE_LIMIT_PER_MINUTE: int(1, 1000).default(30),
+    /// Admin sign-in attempts allowed per IP per 5 minutes. A real estate office
+    /// with several operators behind one NAT address needs headroom above the
+    /// per-account lockout, which is the actual brute-force defence.
+    ADMIN_LOGIN_ATTEMPTS_PER_5MIN: int(3, 200).default(10),
 
     // --- Misc ---------------------------------------------------------------
     /// Disables Swagger UI. Swagger is served in every environment except

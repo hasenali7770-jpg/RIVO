@@ -1,7 +1,7 @@
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { AppError, ErrorCode } from '../errors/app-error';
-import { IS_OPTIONAL_AUTH_KEY, IS_PUBLIC_KEY, RivoRequest } from '../decorators';
+import { ADMIN_ROLES_KEY, IS_OPTIONAL_AUTH_KEY, IS_PUBLIC_KEY, RivoRequest } from '../decorators';
 import { TokenService } from '../../modules/auth/token.service';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -26,6 +26,21 @@ export class JwtAuthGuard implements CanActivate {
       context.getClass(),
     ]);
     if (isPublic) return true;
+
+    // Admin routes carry opaque server-side session tokens, not user JWTs, and
+    // are authenticated by AdminAuthGuard. This guard is global, so without this
+    // check it would run first and reject every valid admin token as a malformed
+    // access token.
+    //
+    // The marker is @RequireRoles, which every admin route must declare — so a
+    // route that forgets it is not silently exempted here. It falls through to
+    // this guard (which rejects the admin token) and then to AdminAuthGuard
+    // (which refuses a route with no declared roles). Both paths fail closed.
+    const adminRoles = this.reflector.getAllAndOverride<string[]>(ADMIN_ROLES_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+    if (adminRoles && adminRoles.length > 0) return true;
 
     const isOptional = this.reflector.getAllAndOverride<boolean>(IS_OPTIONAL_AUTH_KEY, [
       context.getHandler(),
