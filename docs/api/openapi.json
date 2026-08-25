@@ -1,0 +1,5030 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/api/v1/health": {
+      "get": {
+        "operationId": "HealthController_health_v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Liveness and dependency health",
+        "tags": [
+          "health"
+        ]
+      }
+    },
+    "/api/v1/health/capabilities": {
+      "get": {
+        "description": "The mobile app calls this at launch to decide which features to show. A false value means the credential is absent, not that the feature is broken.",
+        "operationId": "HealthController_capabilities_v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Which optional integrations are configured on this deployment",
+        "tags": [
+          "health"
+        ]
+      }
+    },
+    "/api/v1/config/flags": {
+      "get": {
+        "description": "A flag is true only when an operator enabled it and the credential its feature needs is present. Clients must hide any control whose flag is false.",
+        "operationId": "FeatureFlagsController_flagsForClient_v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Effective feature flags for this deployment",
+        "tags": [
+          "config"
+        ]
+      }
+    },
+    "/api/v1/auth/request-otp": {
+      "post": {
+        "description": "Rate limited per phone number and per IP. In development (OTP_PROVIDER=console) the response includes `devCode` so the flow can be completed without an SMS contract; this field is never present in production.",
+        "operationId": "AuthController_requestOtp_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RequestOtpDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Code sent; use the returned challengeToken to verify."
+          },
+          "429": {
+            "description": "Too many code requests."
+          },
+          "502": {
+            "description": "The SMS gateway rejected or could not receive the message."
+          }
+        },
+        "summary": "Send a one-time login code by SMS",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/verify-otp": {
+      "post": {
+        "operationId": "AuthController_verifyOtp_v1",
+        "parameters": [
+          {
+            "name": "user-agent",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyOtpDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Signed in. Creates the account on first verification."
+          },
+          "400": {
+            "description": "Code is wrong, expired or already used."
+          }
+        },
+        "summary": "Exchange a one-time code for an access and refresh token pair",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/refresh": {
+      "post": {
+        "description": "Returns a new pair and revokes the presented token. Presenting an already-rotated token is treated as theft: every session for the account is revoked.",
+        "operationId": "AuthController_refresh_v1",
+        "parameters": [
+          {
+            "name": "user-agent",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshTokenDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Rotate a refresh token",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "operationId": "AuthController_logout_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LogoutDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Sign out of this device, or of every device",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/sessions": {
+      "get": {
+        "operationId": "AuthController_sessions_v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List the active sessions on this account",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/sessions/{id}": {
+      "delete": {
+        "operationId": "AuthController_revokeSession_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Revoke one session by id",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/users/me": {
+      "get": {
+        "operationId": "UsersController_me_v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "The signed-in user profile",
+        "tags": [
+          "users"
+        ]
+      },
+      "patch": {
+        "operationId": "UsersController_updateMe_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProfileDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Update display name, locale, account type or avatar",
+        "tags": [
+          "users"
+        ]
+      }
+    },
+    "/api/v1/users/me/privacy": {
+      "patch": {
+        "description": "Turning off telemetry stops collection immediately. Raw samples already collected are purged by the retention job; anonymous aggregates, which cannot identify a person, are retained.",
+        "operationId": "UsersController_updatePrivacy_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePrivacyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Update privacy settings",
+        "tags": [
+          "users"
+        ]
+      }
+    },
+    "/api/v1/users/me/seller-profile": {
+      "patch": {
+        "operationId": "UsersController_updateSellerProfile_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateSellerProfileDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create or update the seller/office profile",
+        "tags": [
+          "users"
+        ]
+      }
+    },
+    "/api/v1/users/me/verification": {
+      "post": {
+        "description": "Submits documents for admin review. The verified badge appears only after an admin approves.",
+        "operationId": "UsersController_requestVerification_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RequestVerificationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Request seller verification",
+        "tags": [
+          "users"
+        ]
+      }
+    },
+    "/api/v1/users/me/devices": {
+      "get": {
+        "operationId": "UsersController_devices_v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Devices signed in to this account",
+        "tags": [
+          "users"
+        ]
+      }
+    },
+    "/api/v1/users/me/places": {
+      "get": {
+        "operationId": "UsersController_places_v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Saved destinations (Home, Work, custom)",
+        "tags": [
+          "users"
+        ]
+      },
+      "post": {
+        "operationId": "UsersController_savePlace_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SavePlaceDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Save a destination. HOME and WORK replace any existing entry.",
+        "tags": [
+          "users"
+        ]
+      }
+    },
+    "/api/v1/users/me/places/{id}": {
+      "delete": {
+        "operationId": "UsersController_deletePlace_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Delete a saved destination",
+        "tags": [
+          "users"
+        ]
+      }
+    },
+    "/api/v1/properties": {
+      "get": {
+        "description": "Supports type, sale/rent, price, area, bedrooms, bathrooms, verified-only, owner/office, radius and viewport filtering, with newest/price/area/relevance/distance sorting. Signing in adds `isFavorited` to each result.",
+        "operationId": "PropertiesController_search_v1",
+        "parameters": [
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "description": "Free-text search over title, district and city.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "type",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "HOUSE",
+                  "APARTMENT",
+                  "SHOP",
+                  "BUILDING",
+                  "LAND",
+                  "COMMERCIAL"
+                ]
+              }
+            }
+          },
+          {
+            "name": "purpose",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "SALE",
+                "RENT"
+              ]
+            }
+          },
+          {
+            "name": "minPrice",
+            "required": false,
+            "in": "query",
+            "description": "Minimum price in IQD.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "maxPrice",
+            "required": false,
+            "in": "query",
+            "description": "Maximum price in IQD.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "minArea",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "maxArea",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "minBedrooms",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "minBathrooms",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "governorate",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "BAGHDAD",
+                "BASRA",
+                "NINEVEH",
+                "ERBIL",
+                "SULAYMANIYAH",
+                "DUHOK",
+                "KIRKUK",
+                "NAJAF",
+                "KARBALA",
+                "BABIL",
+                "ANBAR",
+                "DIYALA",
+                "WASIT",
+                "MAYSAN",
+                "DHI_QAR",
+                "MUTHANNA",
+                "QADISIYYAH",
+                "SALAH_AL_DIN"
+              ]
+            }
+          },
+          {
+            "name": "district",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "verifiedOnly",
+            "required": false,
+            "in": "query",
+            "description": "Only listings whose seller is verified.",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "sellerType",
+            "required": false,
+            "in": "query",
+            "description": "Owner vs. office filter.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "INDIVIDUAL",
+                "OFFICE",
+                "DEVELOPER"
+              ]
+            }
+          },
+          {
+            "name": "hasReel",
+            "required": false,
+            "in": "query",
+            "description": "Only listings that have a published Reel.",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "lat",
+            "required": false,
+            "in": "query",
+            "description": "Centre latitude for a radius search.",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "lng",
+            "required": false,
+            "in": "query",
+            "description": "Centre longitude for a radius search.",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "radiusM",
+            "required": false,
+            "in": "query",
+            "description": "Search radius in metres.",
+            "schema": {
+              "maximum": 100000,
+              "default": 5000,
+              "type": "number"
+            }
+          },
+          {
+            "name": "bbox",
+            "required": false,
+            "in": "query",
+            "description": "Map viewport as \"minLng,minLat,maxLng,maxLat\".",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sort",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "newest",
+                "price_asc",
+                "price_desc",
+                "area_desc",
+                "relevance",
+                "distance"
+              ]
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "maximum": 100,
+              "default": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Search published listings",
+        "tags": [
+          "properties"
+        ]
+      },
+      "post": {
+        "operationId": "PropertiesController_create_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePropertyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create a draft listing",
+        "tags": [
+          "properties"
+        ]
+      }
+    },
+    "/api/v1/properties/map": {
+      "get": {
+        "description": "Returns a trimmed payload suitable for rendering hundreds of pins. Capped at 500 per request.",
+        "operationId": "PropertiesController_mapPins_v1",
+        "parameters": [
+          {
+            "name": "bbox",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "example": "44.30,33.28,44.45,33.36",
+              "type": "string"
+            }
+          },
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "description": "Free-text search over title, district and city.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "type",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "HOUSE",
+                  "APARTMENT",
+                  "SHOP",
+                  "BUILDING",
+                  "LAND",
+                  "COMMERCIAL"
+                ]
+              }
+            }
+          },
+          {
+            "name": "purpose",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "SALE",
+                "RENT"
+              ]
+            }
+          },
+          {
+            "name": "minPrice",
+            "required": false,
+            "in": "query",
+            "description": "Minimum price in IQD.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "maxPrice",
+            "required": false,
+            "in": "query",
+            "description": "Maximum price in IQD.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "minArea",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "maxArea",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "minBedrooms",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "minBathrooms",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "governorate",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "BAGHDAD",
+                "BASRA",
+                "NINEVEH",
+                "ERBIL",
+                "SULAYMANIYAH",
+                "DUHOK",
+                "KIRKUK",
+                "NAJAF",
+                "KARBALA",
+                "BABIL",
+                "ANBAR",
+                "DIYALA",
+                "WASIT",
+                "MAYSAN",
+                "DHI_QAR",
+                "MUTHANNA",
+                "QADISIYYAH",
+                "SALAH_AL_DIN"
+              ]
+            }
+          },
+          {
+            "name": "district",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "verifiedOnly",
+            "required": false,
+            "in": "query",
+            "description": "Only listings whose seller is verified.",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "sellerType",
+            "required": false,
+            "in": "query",
+            "description": "Owner vs. office filter.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "INDIVIDUAL",
+                "OFFICE",
+                "DEVELOPER"
+              ]
+            }
+          },
+          {
+            "name": "hasReel",
+            "required": false,
+            "in": "query",
+            "description": "Only listings that have a published Reel.",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "lat",
+            "required": false,
+            "in": "query",
+            "description": "Centre latitude for a radius search.",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "lng",
+            "required": false,
+            "in": "query",
+            "description": "Centre longitude for a radius search.",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "radiusM",
+            "required": false,
+            "in": "query",
+            "description": "Search radius in metres.",
+            "schema": {
+              "maximum": 100000,
+              "default": 5000,
+              "type": "number"
+            }
+          },
+          {
+            "name": "sort",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "newest",
+                "price_asc",
+                "price_desc",
+                "area_desc",
+                "relevance",
+                "distance"
+              ]
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "maximum": 100,
+              "default": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Price pins for the map viewport",
+        "tags": [
+          "properties"
+        ]
+      }
+    },
+    "/api/v1/properties/mine": {
+      "get": {
+        "operationId": "PropertiesController_mine_v1",
+        "parameters": [
+          {
+            "name": "status",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "The signed-in user’s own listings, in any status",
+        "tags": [
+          "properties"
+        ]
+      }
+    },
+    "/api/v1/properties/favorites": {
+      "get": {
+        "operationId": "PropertiesController_favorites_v1",
+        "parameters": [
+          {
+            "name": "page",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Saved listings",
+        "tags": [
+          "properties"
+        ]
+      }
+    },
+    "/api/v1/properties/{id}": {
+      "get": {
+        "operationId": "PropertiesController_get_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "404": {
+            "description": "No published listing with this id."
+          }
+        },
+        "summary": "Public listing detail",
+        "tags": [
+          "properties"
+        ]
+      },
+      "patch": {
+        "operationId": "PropertiesController_update_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePropertyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "409": {
+            "description": "The listing is in a status that cannot be edited."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Update a draft listing",
+        "tags": [
+          "properties"
+        ]
+      }
+    },
+    "/api/v1/properties/{id}/edit": {
+      "get": {
+        "description": "Includes the exact pin, unconfirmed media, AI enhancement state, payment history, moderation notes and a checklist of what is still missing before submission.",
+        "operationId": "PropertiesController_getForEdit_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Owner view of a listing",
+        "tags": [
+          "properties"
+        ]
+      }
+    },
+    "/api/v1/properties/{id}/submit": {
+      "post": {
+        "description": "Enforces the photo rule server-side: fewer than 8 or more than 18 confirmed photos is refused. On success the listing moves to AWAITING_PAYMENT; only a settled payment moves it to review.",
+        "operationId": "PropertiesController_submit_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "422": {
+            "description": "Photo count outside 8–18, or required fields missing."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Submit a listing for payment and review",
+        "tags": [
+          "properties"
+        ]
+      }
+    },
+    "/api/v1/properties/{id}/reopen": {
+      "post": {
+        "operationId": "PropertiesController_reopen_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Move a rejected listing back to draft so it can be corrected",
+        "tags": [
+          "properties"
+        ]
+      }
+    },
+    "/api/v1/properties/{id}/archive": {
+      "post": {
+        "operationId": "PropertiesController_archive_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Archive a published listing",
+        "tags": [
+          "properties"
+        ]
+      }
+    },
+    "/api/v1/properties/{id}/sold": {
+      "post": {
+        "operationId": "PropertiesController_markSold_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Mark a listing as sold",
+        "tags": [
+          "properties"
+        ]
+      }
+    },
+    "/api/v1/properties/{id}/rented": {
+      "post": {
+        "operationId": "PropertiesController_markRented_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Mark a listing as rented",
+        "tags": [
+          "properties"
+        ]
+      }
+    },
+    "/api/v1/properties/{id}/media/reorder": {
+      "post": {
+        "operationId": "PropertiesController_reorderMedia_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReorderMediaDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Reorder gallery photos and choose the cover",
+        "tags": [
+          "properties"
+        ]
+      }
+    },
+    "/api/v1/properties/{id}/favorite": {
+      "post": {
+        "operationId": "PropertiesController_favorite_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Save a listing",
+        "tags": [
+          "properties"
+        ]
+      },
+      "delete": {
+        "operationId": "PropertiesController_unfavorite_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Remove a saved listing",
+        "tags": [
+          "properties"
+        ]
+      }
+    },
+    "/api/v1/properties/{id}/report": {
+      "post": {
+        "operationId": "PropertiesController_report_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReportPropertyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Report a listing as fake, misleading or offensive",
+        "tags": [
+          "properties"
+        ]
+      }
+    },
+    "/api/v1/uploads/images/presign": {
+      "post": {
+        "description": "Photos upload directly to Cloudflare R2; bytes never pass through the API. The 18-photo ceiling is checked against what the listing already has, so batching cannot bypass it.",
+        "operationId": "MediaController_presign_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PresignImagesDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "422": {
+            "description": "The request would take the listing past 18 photos."
+          },
+          "503": {
+            "description": "R2 credentials are not configured on this deployment."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get presigned R2 URLs for property photos",
+        "tags": [
+          "media"
+        ]
+      }
+    },
+    "/api/v1/uploads/images/complete": {
+      "post": {
+        "description": "Each object is verified against R2 before it is marked confirmed. Only confirmed originals count toward the 8–18 rule.",
+        "operationId": "MediaController_complete_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompleteUploadDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Confirm photo uploads finished",
+        "tags": [
+          "media"
+        ]
+      }
+    },
+    "/api/v1/uploads/user-asset/presign": {
+      "post": {
+        "operationId": "MediaController_presignUserAsset_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PresignUserAssetDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Presign an avatar or verification-document upload",
+        "tags": [
+          "media"
+        ]
+      }
+    },
+    "/api/v1/media/{id}": {
+      "delete": {
+        "operationId": "MediaController_deleteMedia_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Delete a photo and its enhanced derivative",
+        "tags": [
+          "media"
+        ]
+      }
+    },
+    "/api/v1/media/{id}/compare": {
+      "get": {
+        "description": "Returns both versions with the enhancement disclosure. Minimum 8 photos are required to publish.",
+        "operationId": "MediaController_compare_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Compare the original and enhanced version of a photo",
+        "tags": [
+          "media"
+        ]
+      }
+    },
+    "/api/v1/media/{id}/select": {
+      "post": {
+        "description": "Both versions remain stored. Selecting one never deletes the other.",
+        "operationId": "MediaController_select_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SelectMediaVersionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Choose which version of a photo the listing publishes",
+        "tags": [
+          "media"
+        ]
+      }
+    },
+    "/api/v1/media/{id}/enhance": {
+      "post": {
+        "operationId": "MediaController_enhance_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RequestEnhancementDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "503": {
+            "description": "AI enhancement is disabled or unconfigured on this deployment."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Queue AI enhancement for a photo",
+        "tags": [
+          "media"
+        ]
+      }
+    },
+    "/api/v1/media/jobs/{id}": {
+      "get": {
+        "operationId": "MediaController_jobStatus_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Status of one media or AI job",
+        "tags": [
+          "media"
+        ]
+      }
+    },
+    "/api/v1/properties/{id}/media/jobs": {
+      "get": {
+        "operationId": "MediaController_propertyJobs_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "All processing jobs for a listing",
+        "tags": [
+          "media"
+        ]
+      }
+    },
+    "/api/v1/payments/listing/create": {
+      "post": {
+        "description": "The amount is fixed server-side at 3000 IQD and is never read from the request. The listing must be in AWAITING_PAYMENT.",
+        "operationId": "PaymentsController_create_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateListingPaymentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "409": {
+            "description": "The listing is not awaiting payment, or has already been paid."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create a 3000 IQD listing payment",
+        "tags": [
+          "payments"
+        ]
+      }
+    },
+    "/api/v1/payments/mine": {
+      "get": {
+        "operationId": "PaymentsController_mine_v1",
+        "parameters": [
+          {
+            "name": "page",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Payment history for the signed-in user",
+        "tags": [
+          "payments"
+        ]
+      }
+    },
+    "/api/v1/payments/{id}/status": {
+      "get": {
+        "description": "Poll this after returning from the gateway. The value here reflects what the verified webhook reported — the app must not treat its own return screen as proof of payment.",
+        "operationId": "PaymentsController_status_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Current state of a payment",
+        "tags": [
+          "payments"
+        ]
+      }
+    },
+    "/api/v1/payments/webhook/{provider}": {
+      "post": {
+        "description": "The only path that can move a payment to PAID. An unsigned or badly signed request is recorded as evidence and rejected with 401.",
+        "operationId": "PaymentsController_webhook_v1",
+        "parameters": [
+          {
+            "name": "provider",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Event received. `applied` says whether it changed anything."
+          },
+          "401": {
+            "description": "Signature verification failed."
+          }
+        },
+        "summary": "Payment gateway webhook (signature-verified)",
+        "tags": [
+          "payments"
+        ]
+      }
+    },
+    "/api/v1/notifications": {
+      "get": {
+        "operationId": "NotificationsController_list_v1",
+        "parameters": [
+          {
+            "name": "unreadOnly",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List notifications for the signed-in user",
+        "tags": [
+          "notifications"
+        ]
+      }
+    },
+    "/api/v1/notifications/{id}/read": {
+      "post": {
+        "operationId": "NotificationsController_markRead_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Mark one notification as read",
+        "tags": [
+          "notifications"
+        ]
+      }
+    },
+    "/api/v1/notifications/read-all": {
+      "post": {
+        "operationId": "NotificationsController_markAllRead_v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Mark every notification as read",
+        "tags": [
+          "notifications"
+        ]
+      }
+    },
+    "/api/v1/reels/feed": {
+      "get": {
+        "description": "Vertical, property-only feed. Ranked on recency, distance, watch completion, saves and verification. Every reel is bound to a published listing — there is no general social content.",
+        "operationId": "ReelsController_feed_v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Property Reels feed",
+        "tags": [
+          "reels"
+        ]
+      }
+    },
+    "/api/v1/reels/upload": {
+      "post": {
+        "description": "Returns a Cloudflare Stream direct-creator-upload URL. The reel is bound to the listing before upload; a reel with no property cannot exist.",
+        "operationId": "ReelsController_createUpload_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateReelUploadDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "404": {
+            "description": "The listing does not exist or is not yours."
+          },
+          "503": {
+            "description": "Cloudflare Stream is not configured on this deployment."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Start a reel upload for one of your listings",
+        "tags": [
+          "reels"
+        ]
+      }
+    },
+    "/api/v1/reels/{id}/uploaded": {
+      "post": {
+        "description": "Queues server-side validation. Resolution and duration are measured on the server; anything under 1080p is refused regardless of what the client reports.",
+        "operationId": "ReelsController_finishUpload_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FinishUploadDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Tell the API the file finished uploading",
+        "tags": [
+          "reels"
+        ]
+      }
+    },
+    "/api/v1/reels/{id}/status": {
+      "get": {
+        "operationId": "ReelsController_status_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Processing and validation state of your reel",
+        "tags": [
+          "reels"
+        ]
+      }
+    },
+    "/api/v1/reels/{id}/caption": {
+      "patch": {
+        "operationId": "ReelsController_updateCaption_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCaptionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Update the reel caption",
+        "tags": [
+          "reels"
+        ]
+      }
+    },
+    "/api/v1/reels/{id}/cover": {
+      "post": {
+        "operationId": "ReelsController_setCover_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetCoverDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Choose the cover frame timestamp",
+        "tags": [
+          "reels"
+        ]
+      }
+    },
+    "/api/v1/reels/{id}": {
+      "delete": {
+        "operationId": "ReelsController_remove_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Delete your reel",
+        "tags": [
+          "reels"
+        ]
+      },
+      "get": {
+        "operationId": "ReelsController_getOne_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "One reel with its linked listing",
+        "tags": [
+          "reels"
+        ]
+      }
+    },
+    "/api/v1/reels/{id}/view-event": {
+      "post": {
+        "description": "Completion is clamped to 0–1 on the server so a client cannot inflate its own ranking.",
+        "operationId": "ReelsController_viewEvent_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ViewEventDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Report watch time for feed ranking",
+        "tags": [
+          "reels"
+        ]
+      }
+    },
+    "/api/v1/maps/search": {
+      "get": {
+        "description": "Proxied to Mapbox Geocoding server-side so the secret token never reaches a device. Results are biased to Iraq and, when coordinates are supplied, to the user’s surroundings.",
+        "operationId": "MapsController_search_v1",
+        "parameters": [
+          {
+            "name": "q",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "example": "شارع فلسطين",
+              "type": "string"
+            }
+          },
+          {
+            "name": "lat",
+            "required": false,
+            "in": "query",
+            "description": "Bias results toward this latitude.",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "lng",
+            "required": false,
+            "in": "query",
+            "description": "Bias results toward this longitude.",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "maximum": 10,
+              "default": 8,
+              "type": "number"
+            }
+          },
+          {
+            "name": "language",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": "ar",
+              "type": "string",
+              "enum": [
+                "ar",
+                "en"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "503": {
+            "description": "Mapbox is not configured on this deployment."
+          }
+        },
+        "summary": "Search for a place in Iraq",
+        "tags": [
+          "maps"
+        ]
+      }
+    },
+    "/api/v1/maps/routes": {
+      "post": {
+        "description": "Uses the Mapbox driving-traffic profile. Returns the best route plus alternatives, each with distance, free-flow duration, duration in traffic, the resulting delay, turn-by-turn steps and the polyline — enriched with any active RIVO incident within 60 m of the line. Pass `propertyId` to route to a listing (the `اذهب إلى العقار` action).",
+        "operationId": "MapsController_route_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RouteRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "422": {
+            "description": "No route exists between these points."
+          }
+        },
+        "summary": "Calculate a traffic-aware route",
+        "tags": [
+          "maps"
+        ]
+      }
+    },
+    "/api/v1/maps/route-feedback": {
+      "post": {
+        "description": "Predicted vs. actual travel time. Feeds ETA calibration for the RIVO traffic engine.",
+        "operationId": "MapsController_feedback_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RouteFeedbackDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Report how a route actually went",
+        "tags": [
+          "maps"
+        ]
+      }
+    },
+    "/api/v1/maps/property/{id}/destination": {
+      "get": {
+        "description": "Backs the `اذهب إلى العقار` button when the app wants to set a destination without routing yet.",
+        "operationId": "MapsController_destination_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Destination coordinates for a listing",
+        "tags": [
+          "maps"
+        ]
+      }
+    },
+    "/api/v1/traffic/incidents": {
+      "get": {
+        "description": "Returns accidents, jams, closures, road works, flooded roads, potholes and hazards (ACCIDENT, TRAFFIC_JAM, ROAD_CLOSURE, ROAD_WORKS, FLOODED_ROAD, POTHOLE, HAZARD). A report the community voted down is hidden. The reporter is never identified.",
+        "operationId": "TrafficController_list_v1",
+        "parameters": [
+          {
+            "name": "bbox",
+            "required": false,
+            "in": "query",
+            "description": "Viewport as \"minLng,minLat,maxLng,maxLat\".",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "lat",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "lng",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "radiusM",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "maximum": 50000,
+              "default": 5000,
+              "type": "number"
+            }
+          },
+          {
+            "name": "type",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "ACCIDENT",
+                  "TRAFFIC_JAM",
+                  "ROAD_CLOSURE",
+                  "ROAD_WORKS",
+                  "FLOODED_ROAD",
+                  "POTHOLE",
+                  "HAZARD"
+                ]
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Active road incidents in a viewport or radius",
+        "tags": [
+          "traffic"
+        ]
+      },
+      "post": {
+        "description": "A report within 120 m of an existing report of the same type is merged into it as a confirmation rather than creating a duplicate pin.",
+        "operationId": "TrafficController_create_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateIncidentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "409": {
+            "description": "You already reported this location recently."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Report a road condition",
+        "tags": [
+          "traffic"
+        ]
+      }
+    },
+    "/api/v1/traffic/incidents/{id}/confirm": {
+      "post": {
+        "description": "Votes are weighted by how close the voter is. You cannot vote on your own report, or vote twice.",
+        "operationId": "TrafficController_confirm_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmIncidentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Confirm or dismiss a report",
+        "tags": [
+          "traffic"
+        ]
+      }
+    },
+    "/api/v1/traffic/incidents/mine": {
+      "get": {
+        "operationId": "TrafficController_mine_v1",
+        "parameters": [
+          {
+            "name": "page",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Your own reports",
+        "tags": [
+          "traffic"
+        ]
+      }
+    },
+    "/api/v1/traffic/telemetry/batch": {
+      "post": {
+        "description": "Requires an explicit account-level opt-in AND a per-batch consent flag. Samples are stored with a rotating pseudonymous session key and NO account identifier, and raw samples are deleted after 14 days. Only aggregates built from at least 5 distinct sessions are ever readable.",
+        "operationId": "TrafficController_telemetry_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TelemetryBatchDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "403": {
+            "description": "Telemetry is not enabled on this account."
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Contribute anonymous speed samples",
+        "tags": [
+          "traffic"
+        ]
+      }
+    },
+    "/api/v1/traffic/segments": {
+      "get": {
+        "description": "Live where recent samples exist, otherwise the typical speed for this time of week. Built only from k-anonymous aggregates.",
+        "operationId": "TrafficController_segments_v1",
+        "parameters": [
+          {
+            "name": "bbox",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Aggregated segment speeds for a viewport",
+        "tags": [
+          "traffic"
+        ]
+      }
+    },
+    "/api/v1/admin/auth/login": {
+      "post": {
+        "description": "Five failed attempts lock the account for 15 minutes. Sessions are server-side and revocable.",
+        "operationId": "AdminController_login_v1",
+        "parameters": [
+          {
+            "name": "user-agent",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminLoginDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "admin": []
+          }
+        ],
+        "summary": "Admin sign-in",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/auth/logout": {
+      "post": {
+        "operationId": "AdminController_logout_v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "admin": []
+          }
+        ],
+        "summary": "End this admin session",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/auth/me": {
+      "get": {
+        "operationId": "AdminController_me_v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "admin": []
+          }
+        ],
+        "summary": "The signed-in admin",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/auth/change-password": {
+      "post": {
+        "operationId": "AdminController_changePassword_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangePasswordDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "admin": []
+          }
+        ],
+        "summary": "Change your password. Signs out every admin session.",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/dashboard": {
+      "get": {
+        "operationId": "AdminController_dashboard_v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "admin": []
+          }
+        ],
+        "summary": "Platform KPIs",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/properties": {
+      "get": {
+        "operationId": "AdminController_listProperties_v1",
+        "parameters": [
+          {
+            "name": "status",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "q",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "governorate",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ownerId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "admin": []
+          }
+        ],
+        "summary": "List listings in any status",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/properties/{id}": {
+      "get": {
+        "operationId": "AdminController_getProperty_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "admin": []
+          }
+        ],
+        "summary": "Full review payload for one listing",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/properties/{id}/approve": {
+      "post": {
+        "description": "Refused unless the listing has a settled payment and 8–18 photos.",
+        "operationId": "AdminController_approve_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ModerationDecisionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "402": {
+            "description": "No settled payment for this listing."
+          },
+          "422": {
+            "description": "Photo count outside 8–18."
+          }
+        },
+        "security": [
+          {
+            "admin": []
+          }
+        ],
+        "summary": "Approve and publish a listing",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/properties/{id}/reject": {
+      "post": {
+        "operationId": "AdminController_reject_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RejectionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "admin": []
+          }
+        ],
+        "summary": "Reject a listing with a reason shown to the seller",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/properties/{id}/request-changes": {
+      "post": {
+        "operationId": "AdminController_requestChanges_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RejectionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "admin": []
+          }
+        ],
+        "summary": "Ask the seller to correct the listing and resubmit",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/properties/{id}/unpublish": {
+      "post": {
+        "operationId": "AdminController_unpublish_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RejectionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "admin": []
+          }
+        ],
+        "summary": "Pull a published listing back into review",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/users": {
+      "get": {
+        "operationId": "AdminController_listUsers_v1",
+        "parameters": [
+          {
+            "name": "q",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sellerType",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "blocked",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "admin": []
+          }
+        ],
+        "summary": "List users",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/users/{id}": {
+      "get": {
+        "description": "Location history is never included — Master Plan §13 forbids exposing raw GPS tracks to admins.",
+        "operationId": "AdminController_getUser_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "admin": []
+          }
+        ],
+        "summary": "One user with listings, payments and devices",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/users/{id}/block": {
+      "post": {
+        "operationId": "AdminController_blockUser_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BlockUserDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "admin": []
+          }
+        ],
+        "summary": "Block or unblock a user. Blocking revokes their sessions immediately.",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/payments": {
+      "get": {
+        "operationId": "AdminController_listPayments_v1",
+        "parameters": [
+          {
+            "name": "status",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "propertyId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "admin": []
+          }
+        ],
+        "summary": "Payments and revenue",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/payments/{id}/events": {
+      "get": {
+        "description": "Includes rejected events with the reason, for dispute and abuse investigation.",
+        "operationId": "AdminController_paymentEvents_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "admin": []
+          }
+        ],
+        "summary": "Every webhook received for a payment",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/payments/{id}/settle": {
+      "post": {
+        "description": "The only non-webhook route to PAID. Requires a settlement reference and an explanation, and writes an audit entry naming the operator. It exists for cash and bank transfers, not to simulate a gateway.",
+        "operationId": "AdminController_settlePayment_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SettlePaymentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "admin": []
+          }
+        ],
+        "summary": "Record a payment received offline",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/incidents": {
+      "get": {
+        "operationId": "AdminController_listIncidents_v1",
+        "parameters": [
+          {
+            "name": "status",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "type",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "admin": []
+          }
+        ],
+        "summary": "Road incident reports",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/incidents/{id}/remove": {
+      "post": {
+        "operationId": "AdminController_removeIncident_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RejectionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "admin": []
+          }
+        ],
+        "summary": "Take a false or abusive report off the map",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/incidents/{id}/approve": {
+      "post": {
+        "operationId": "AdminController_approveIncident_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "admin": []
+          }
+        ],
+        "summary": "Publish a report that was held for review",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/reels": {
+      "get": {
+        "operationId": "AdminController_listReels_v1",
+        "parameters": [
+          {
+            "name": "status",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "admin": []
+          }
+        ],
+        "summary": "Property Reels",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/reels/{id}/remove": {
+      "post": {
+        "operationId": "AdminController_removeReel_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RejectionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "admin": []
+          }
+        ],
+        "summary": "Remove a reel — e.g. content that is not about the property",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/verifications": {
+      "get": {
+        "operationId": "AdminController_listVerifications_v1",
+        "parameters": [
+          {
+            "name": "status",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "admin": []
+          }
+        ],
+        "summary": "Seller verification requests with signed document links",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/verifications/{id}/decide": {
+      "post": {
+        "operationId": "AdminController_decideVerification_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerificationDecisionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "admin": []
+          }
+        ],
+        "summary": "Approve or reject a verification request",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/reports": {
+      "get": {
+        "operationId": "AdminController_listReports_v1",
+        "parameters": [
+          {
+            "name": "status",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "admin": []
+          }
+        ],
+        "summary": "Listing abuse reports",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/reports/{id}/resolve": {
+      "post": {
+        "operationId": "AdminController_resolveReport_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResolveReportDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "admin": []
+          }
+        ],
+        "summary": "Close a report as actioned or dismissed",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/jobs": {
+      "get": {
+        "operationId": "AdminController_listJobs_v1",
+        "parameters": [
+          {
+            "name": "status",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "type",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "admin": []
+          }
+        ],
+        "summary": "Media and AI job state",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/flags": {
+      "get": {
+        "description": "`effective` is false when a flag is on but the credential its feature needs is missing.",
+        "operationId": "AdminController_listFlags_v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "admin": []
+          }
+        ],
+        "summary": "Feature flags",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/flags/{key}": {
+      "patch": {
+        "operationId": "AdminController_setFlag_v1",
+        "parameters": [
+          {
+            "name": "key",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetFlagDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "admin": []
+          }
+        ],
+        "summary": "Turn a feature on or off",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/audit-logs": {
+      "get": {
+        "description": "The table is append-only at the database level: UPDATE and DELETE are refused by a trigger.",
+        "operationId": "AdminController_auditLogs_v1",
+        "parameters": [
+          {
+            "name": "entityType",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "entityId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "adminId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "action",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "admin": []
+          }
+        ],
+        "summary": "Search the audit trail",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/admins": {
+      "get": {
+        "operationId": "AdminController_listAdmins_v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "admin": []
+          }
+        ],
+        "summary": "List admin accounts",
+        "tags": [
+          "admin"
+        ]
+      },
+      "post": {
+        "operationId": "AdminController_createAdmin_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAdminDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "admin": []
+          }
+        ],
+        "summary": "Create an admin account with a temporary password",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/api/v1/admin/admins/{id}/active": {
+      "patch": {
+        "operationId": "AdminController_setAdminActive_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetActiveDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "admin": []
+          }
+        ],
+        "summary": "Enable or disable an admin account",
+        "tags": [
+          "admin"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "RIVO API",
+    "description": "RIVO | ريفو — خرائط | داركم.\n\nSmart navigation and the Iraqi real-estate marketplace in one API.\n\n**Business rules enforced server-side:** 8–18 property photos, minimum 1080p reels, a 3,000 IQD listing fee, and payment state that only a verified gateway webhook can advance.",
+    "version": "1.0.0",
+    "contact": {}
+  },
+  "tags": [
+    {
+      "name": "auth",
+      "description": "Phone OTP sign-in, token rotation, device sessions"
+    },
+    {
+      "name": "properties",
+      "description": "Darcom listings: create, search, moderate"
+    },
+    {
+      "name": "media",
+      "description": "Photo upload to R2 and AI enhancement jobs"
+    },
+    {
+      "name": "reels",
+      "description": "Property Reels: Cloudflare Stream upload and feed"
+    },
+    {
+      "name": "payments",
+      "description": "3,000 IQD listing fee and gateway webhooks"
+    },
+    {
+      "name": "maps",
+      "description": "Search, traffic-aware routing, route feedback"
+    },
+    {
+      "name": "traffic",
+      "description": "Road incidents and consented telemetry"
+    },
+    {
+      "name": "admin",
+      "description": "Admin dashboard API (role-gated)"
+    }
+  ],
+  "servers": [
+    {
+      "url": "http://localhost:3000"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "user": {
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "type": "http"
+      },
+      "admin": {
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "type": "http"
+      }
+    },
+    "schemas": {
+      "RequestOtpDto": {
+        "type": "object",
+        "properties": {
+          "phone": {
+            "type": "string",
+            "example": "+9647701234567",
+            "description": "Phone number. 07XXXXXXXXX and 9647XXXXXXXXX are accepted and normalised to E.164."
+          },
+          "locale": {
+            "type": "string",
+            "enum": [
+              "ar",
+              "en",
+              "ku"
+            ],
+            "default": "ar"
+          },
+          "deviceKey": {
+            "type": "string",
+            "description": "Stable per-install device identifier."
+          }
+        },
+        "required": [
+          "phone"
+        ]
+      },
+      "VerifyOtpDto": {
+        "type": "object",
+        "properties": {
+          "phone": {
+            "type": "string",
+            "example": "+9647701234567"
+          },
+          "challengeToken": {
+            "type": "string",
+            "description": "Opaque token returned by /auth/request-otp."
+          },
+          "code": {
+            "type": "string",
+            "example": "123456",
+            "minLength": 6,
+            "maxLength": 6
+          },
+          "deviceKey": {
+            "type": "string"
+          },
+          "platform": {
+            "type": "string",
+            "enum": [
+              "android",
+              "ios",
+              "web"
+            ]
+          },
+          "appVersion": {
+            "type": "string"
+          },
+          "osVersion": {
+            "type": "string"
+          },
+          "deviceModel": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "phone",
+          "challengeToken",
+          "code"
+        ]
+      },
+      "RefreshTokenDto": {
+        "type": "object",
+        "properties": {
+          "refreshToken": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "refreshToken"
+        ]
+      },
+      "LogoutDto": {
+        "type": "object",
+        "properties": {
+          "refreshToken": {
+            "type": "string",
+            "description": "Refresh token to revoke. Omit to revoke the current device only."
+          },
+          "allDevices": {
+            "type": "boolean",
+            "description": "Revoke every session for this account.",
+            "default": false
+          }
+        }
+      },
+      "UpdateProfileDto": {
+        "type": "object",
+        "properties": {
+          "displayName": {
+            "type": "string",
+            "maxLength": 120
+          },
+          "locale": {
+            "type": "string",
+            "enum": [
+              "ar",
+              "en",
+              "ku"
+            ]
+          },
+          "sellerType": {
+            "type": "string",
+            "enum": [
+              "INDIVIDUAL",
+              "OFFICE",
+              "DEVELOPER"
+            ]
+          },
+          "avatarKey": {
+            "type": "string",
+            "description": "R2 object key of an uploaded avatar."
+          },
+          "marketingOptIn": {
+            "type": "boolean",
+            "description": "Opt in or out of marketing messages."
+          }
+        }
+      },
+      "UpdatePrivacyDto": {
+        "type": "object",
+        "properties": {
+          "telemetryOptIn": {
+            "type": "boolean",
+            "description": "Consent to contribute anonymous speed samples that improve traffic estimates. Revoking stops collection immediately."
+          },
+          "marketingOptIn": {
+            "type": "boolean"
+          }
+        }
+      },
+      "UpdateSellerProfileDto": {
+        "type": "object",
+        "properties": {
+          "sellerType": {
+            "type": "string",
+            "enum": [
+              "INDIVIDUAL",
+              "OFFICE",
+              "DEVELOPER"
+            ]
+          },
+          "officeName": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "officeLicenseNo": {
+            "type": "string",
+            "maxLength": 120
+          },
+          "about": {
+            "type": "string",
+            "maxLength": 2000
+          },
+          "contactPhone": {
+            "type": "string",
+            "example": "+9647701234567"
+          },
+          "whatsappPhone": {
+            "type": "string",
+            "example": "+9647701234567"
+          },
+          "logoKey": {
+            "type": "string"
+          }
+        }
+      },
+      "RequestVerificationDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "SavePlaceDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "HOME",
+              "WORK",
+              "CUSTOM"
+            ]
+          }
+        }
+      },
+      "CreatePropertyDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "HOUSE",
+              "APARTMENT",
+              "SHOP",
+              "BUILDING",
+              "LAND",
+              "COMMERCIAL"
+            ]
+          },
+          "purpose": {
+            "type": "string",
+            "enum": [
+              "SALE",
+              "RENT"
+            ]
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 160
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 4000
+          },
+          "priceIqd": {
+            "type": "string",
+            "description": "Price in whole Iraqi dinars. Sent as a string because values exceed 2^53 is not a risk but 2^31 is.",
+            "example": "250000000"
+          },
+          "rentPeriod": {
+            "type": "string",
+            "enum": [
+              "MONTHLY",
+              "YEARLY"
+            ],
+            "description": "Required when purpose = RENT."
+          },
+          "areaSqm": {
+            "type": "number",
+            "example": 250,
+            "description": "Area in square metres."
+          },
+          "bedrooms": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 50
+          },
+          "bathrooms": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 50
+          },
+          "floors": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 200
+          },
+          "floorNumber": {
+            "type": "number"
+          },
+          "yearBuilt": {
+            "type": "number"
+          },
+          "furnished": {
+            "type": "boolean"
+          },
+          "governorate": {
+            "type": "string",
+            "enum": [
+              "BAGHDAD",
+              "BASRA",
+              "NINEVEH",
+              "ERBIL",
+              "SULAYMANIYAH",
+              "DUHOK",
+              "KIRKUK",
+              "NAJAF",
+              "KARBALA",
+              "BABIL",
+              "ANBAR",
+              "DIYALA",
+              "WASIT",
+              "MAYSAN",
+              "DHI_QAR",
+              "MUTHANNA",
+              "QADISIYYAH",
+              "SALAH_AL_DIN"
+            ]
+          },
+          "city": {
+            "type": "string",
+            "maxLength": 120
+          },
+          "district": {
+            "type": "string",
+            "maxLength": 120
+          },
+          "addressLine": {
+            "type": "string",
+            "maxLength": 300
+          },
+          "lat": {
+            "type": "number",
+            "description": "Map pin latitude."
+          },
+          "lng": {
+            "type": "number",
+            "description": "Map pin longitude."
+          },
+          "displayPrecision": {
+            "type": "string",
+            "enum": [
+              "EXACT",
+              "APPROXIMATE"
+            ],
+            "default": "EXACT",
+            "description": "APPROXIMATE publishes a jittered pin and hides the exact one. Gated by the approximate_location_option flag."
+          },
+          "contactPreference": {
+            "type": "string",
+            "enum": [
+              "CALL",
+              "WHATSAPP",
+              "BOTH"
+            ],
+            "default": "BOTH"
+          },
+          "contactPhone": {
+            "type": "string",
+            "description": "Overrides the account phone for this listing."
+          }
+        },
+        "required": [
+          "type",
+          "purpose",
+          "title",
+          "priceIqd",
+          "areaSqm",
+          "governorate",
+          "lat",
+          "lng"
+        ]
+      },
+      "UpdatePropertyDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "HOUSE",
+              "APARTMENT",
+              "SHOP",
+              "BUILDING",
+              "LAND",
+              "COMMERCIAL"
+            ]
+          },
+          "purpose": {
+            "type": "string",
+            "enum": [
+              "SALE",
+              "RENT"
+            ]
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 160
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 4000
+          },
+          "priceIqd": {
+            "type": "string",
+            "description": "Price in whole Iraqi dinars. Sent as a string because values exceed 2^53 is not a risk but 2^31 is.",
+            "example": "250000000"
+          },
+          "rentPeriod": {
+            "type": "string",
+            "enum": [
+              "MONTHLY",
+              "YEARLY"
+            ],
+            "description": "Required when purpose = RENT."
+          },
+          "areaSqm": {
+            "type": "number",
+            "example": 250,
+            "description": "Area in square metres."
+          },
+          "bedrooms": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 50
+          },
+          "bathrooms": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 50
+          },
+          "floors": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 200
+          },
+          "floorNumber": {
+            "type": "number"
+          },
+          "yearBuilt": {
+            "type": "number"
+          },
+          "furnished": {
+            "type": "boolean"
+          },
+          "governorate": {
+            "type": "string",
+            "enum": [
+              "BAGHDAD",
+              "BASRA",
+              "NINEVEH",
+              "ERBIL",
+              "SULAYMANIYAH",
+              "DUHOK",
+              "KIRKUK",
+              "NAJAF",
+              "KARBALA",
+              "BABIL",
+              "ANBAR",
+              "DIYALA",
+              "WASIT",
+              "MAYSAN",
+              "DHI_QAR",
+              "MUTHANNA",
+              "QADISIYYAH",
+              "SALAH_AL_DIN"
+            ]
+          },
+          "city": {
+            "type": "string",
+            "maxLength": 120
+          },
+          "district": {
+            "type": "string",
+            "maxLength": 120
+          },
+          "addressLine": {
+            "type": "string",
+            "maxLength": 300
+          },
+          "lat": {
+            "type": "number",
+            "description": "Map pin latitude."
+          },
+          "lng": {
+            "type": "number",
+            "description": "Map pin longitude."
+          },
+          "displayPrecision": {
+            "type": "string",
+            "enum": [
+              "EXACT",
+              "APPROXIMATE"
+            ],
+            "default": "EXACT",
+            "description": "APPROXIMATE publishes a jittered pin and hides the exact one. Gated by the approximate_location_option flag."
+          },
+          "contactPreference": {
+            "type": "string",
+            "enum": [
+              "CALL",
+              "WHATSAPP",
+              "BOTH"
+            ],
+            "default": "BOTH"
+          },
+          "contactPhone": {
+            "type": "string",
+            "description": "Overrides the account phone for this listing."
+          }
+        }
+      },
+      "ReorderMediaDto": {
+        "type": "object",
+        "properties": {
+          "mediaIds": {
+            "description": "Media ids in the order they should appear.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "coverMediaId": {
+            "type": "string",
+            "description": "Media id to use as the listing cover."
+          }
+        },
+        "required": [
+          "mediaIds"
+        ]
+      },
+      "ReportPropertyDto": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "enum": [
+              "FAKE_LISTING",
+              "WRONG_PRICE",
+              "SOLD_ALREADY",
+              "WRONG_LOCATION",
+              "OFFENSIVE",
+              "DUPLICATE",
+              "OTHER"
+            ]
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 1000
+          }
+        },
+        "required": [
+          "reason"
+        ]
+      },
+      "PresignItemDto": {
+        "type": "object",
+        "properties": {
+          "contentType": {
+            "type": "string",
+            "enum": [
+              "image/jpeg",
+              "image/png",
+              "image/webp",
+              "image/heic"
+            ]
+          },
+          "contentLength": {
+            "type": "number",
+            "description": "Exact byte length of the file.",
+            "maximum": 26214400
+          },
+          "checksumSha256": {
+            "type": "string",
+            "description": "SHA-256 of the file, used to detect duplicate uploads."
+          }
+        },
+        "required": [
+          "contentType",
+          "contentLength"
+        ]
+      },
+      "PresignImagesDto": {
+        "type": "object",
+        "properties": {
+          "propertyId": {
+            "type": "string",
+            "description": "Draft listing the photos belong to."
+          },
+          "files": {
+            "maxItems": 18,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PresignItemDto"
+            }
+          }
+        },
+        "required": [
+          "propertyId",
+          "files"
+        ]
+      },
+      "CompleteUploadItemDto": {
+        "type": "object",
+        "properties": {
+          "mediaId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "mediaId"
+        ]
+      },
+      "CompleteUploadDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CompleteUploadItemDto"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "PresignUserAssetDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "SelectMediaVersionDto": {
+        "type": "object",
+        "properties": {
+          "use": {
+            "type": "string",
+            "enum": [
+              "ORIGINAL",
+              "ENHANCED"
+            ],
+            "description": "Which version of this photo appears in the published listing."
+          }
+        },
+        "required": [
+          "use"
+        ]
+      },
+      "RequestEnhancementDto": {
+        "type": "object",
+        "properties": {
+          "force": {
+            "type": "boolean",
+            "description": "Re-run enhancement even if a result already exists."
+          }
+        }
+      },
+      "CreateListingPaymentDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "CreateReelUploadDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "FinishUploadDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "UpdateCaptionDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "SetCoverDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "ViewEventDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "WaypointDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "RouteRequestDto": {
+        "type": "object",
+        "properties": {
+          "origin": {
+            "$ref": "#/components/schemas/WaypointDto"
+          },
+          "destination": {
+            "$ref": "#/components/schemas/WaypointDto"
+          },
+          "waypoints": {
+            "maxItems": 3,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WaypointDto"
+            }
+          },
+          "alternatives": {
+            "type": "boolean",
+            "default": true,
+            "description": "Return up to 2 alternatives."
+          },
+          "originBearing": {
+            "type": "number",
+            "description": "Compass bearing of travel, so a reroute does not begin with a U-turn."
+          },
+          "avoid": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "toll",
+                "motorway",
+                "ferry"
+              ]
+            }
+          },
+          "language": {
+            "type": "string",
+            "enum": [
+              "ar",
+              "en"
+            ],
+            "default": "ar"
+          },
+          "propertyId": {
+            "type": "string",
+            "description": "Route to this listing. Uses the listing’s published coordinates."
+          }
+        },
+        "required": [
+          "origin",
+          "destination"
+        ]
+      },
+      "RouteFeedbackDto": {
+        "type": "object",
+        "properties": {
+          "routeRequestId": {
+            "type": "string",
+            "description": "requestId from the /maps/routes response."
+          },
+          "predictedSeconds": {
+            "type": "number"
+          },
+          "actualSeconds": {
+            "type": "number",
+            "description": "Actual travel time. Omit when the trip was abandoned."
+          },
+          "distanceM": {
+            "type": "number"
+          },
+          "rerouteCount": {
+            "type": "number",
+            "default": 0
+          },
+          "outcome": {
+            "type": "string",
+            "enum": [
+              "COMPLETED",
+              "ABANDONED",
+              "REROUTED_AWAY"
+            ]
+          },
+          "rating": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 5
+          },
+          "comment": {
+            "type": "string",
+            "maxLength": 280
+          },
+          "origin": {
+            "$ref": "#/components/schemas/WaypointDto"
+          },
+          "destination": {
+            "$ref": "#/components/schemas/WaypointDto"
+          }
+        },
+        "required": [
+          "routeRequestId",
+          "predictedSeconds",
+          "outcome",
+          "origin",
+          "destination"
+        ]
+      },
+      "CreateIncidentDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "ACCIDENT",
+              "TRAFFIC_JAM",
+              "ROAD_CLOSURE",
+              "ROAD_WORKS",
+              "FLOODED_ROAD",
+              "POTHOLE",
+              "HAZARD"
+            ]
+          },
+          "lat": {
+            "type": "number"
+          },
+          "lng": {
+            "type": "number"
+          },
+          "headingDeg": {
+            "type": "number",
+            "description": "Direction of travel the report applies to, in degrees from north."
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 280
+          }
+        },
+        "required": [
+          "type",
+          "lat",
+          "lng"
+        ]
+      },
+      "ConfirmIncidentDto": {
+        "type": "object",
+        "properties": {
+          "confirmed": {
+            "type": "boolean",
+            "description": "true = still there, false = not there."
+          },
+          "lat": {
+            "type": "number",
+            "description": "Reporter’s current position, used to weight the vote."
+          },
+          "lng": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "confirmed"
+        ]
+      },
+      "TelemetrySampleDto": {
+        "type": "object",
+        "properties": {
+          "lat": {
+            "type": "number"
+          },
+          "lng": {
+            "type": "number"
+          },
+          "speedKph": {
+            "type": "number",
+            "description": "Speed in km/h.",
+            "minimum": 0,
+            "maximum": 300
+          },
+          "headingDeg": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 359
+          },
+          "accuracyM": {
+            "type": "number",
+            "description": "GPS accuracy in metres. Samples worse than 50 m are discarded."
+          },
+          "recordedAt": {
+            "type": "string",
+            "description": "ISO 8601 timestamp of the fix."
+          }
+        },
+        "required": [
+          "lat",
+          "lng",
+          "speedKph",
+          "recordedAt"
+        ]
+      },
+      "TelemetryBatchDto": {
+        "type": "object",
+        "properties": {
+          "sessionKey": {
+            "type": "string",
+            "description": "Rotating pseudonymous session id generated by the client. Must NOT be a device id, advertising id or account id, and must be regenerated at least daily.",
+            "maxLength": 64
+          },
+          "consent": {
+            "type": "boolean",
+            "description": "Explicit confirmation the user consented. A batch with consent=false is discarded."
+          },
+          "samples": {
+            "maxItems": 200,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TelemetrySampleDto"
+            }
+          }
+        },
+        "required": [
+          "sessionKey",
+          "consent",
+          "samples"
+        ]
+      },
+      "AdminLoginDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string",
+            "minLength": 8
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ]
+      },
+      "ChangePasswordDto": {
+        "type": "object",
+        "properties": {
+          "currentPassword": {
+            "type": "string"
+          },
+          "newPassword": {
+            "type": "string",
+            "minLength": 12
+          }
+        },
+        "required": [
+          "currentPassword",
+          "newPassword"
+        ]
+      },
+      "ModerationDecisionDto": {
+        "type": "object",
+        "properties": {
+          "note": {
+            "type": "string",
+            "description": "Internal note. Optional on approval."
+          }
+        }
+      },
+      "RejectionDto": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "minLength": 10,
+            "description": "Shown to the seller verbatim."
+          }
+        },
+        "required": [
+          "reason"
+        ]
+      },
+      "BlockUserDto": {
+        "type": "object",
+        "properties": {
+          "blocked": {
+            "type": "boolean"
+          },
+          "reason": {
+            "type": "string",
+            "description": "Required when blocking."
+          }
+        },
+        "required": [
+          "blocked"
+        ]
+      },
+      "SettlePaymentDto": {
+        "type": "object",
+        "properties": {
+          "reference": {
+            "type": "string",
+            "description": "Transfer or receipt number for the money actually received."
+          },
+          "note": {
+            "type": "string",
+            "minLength": 10,
+            "description": "How the payment was received."
+          }
+        },
+        "required": [
+          "reference",
+          "note"
+        ]
+      },
+      "VerificationDecisionDto": {
+        "type": "object",
+        "properties": {
+          "decision": {
+            "type": "string",
+            "enum": [
+              "VERIFIED",
+              "REJECTED"
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "description": "Required when rejecting."
+          }
+        },
+        "required": [
+          "decision"
+        ]
+      },
+      "ResolveReportDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ACTIONED",
+              "DISMISSED"
+            ]
+          },
+          "note": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "note"
+        ]
+      },
+      "SetFlagDto": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "enabled"
+        ]
+      },
+      "CreateAdminDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "SUPER_ADMIN",
+              "MODERATOR",
+              "FINANCE",
+              "SUPPORT"
+            ]
+          },
+          "temporaryPassword": {
+            "type": "string",
+            "minLength": 12,
+            "description": "The new admin must change this on first sign-in."
+          }
+        },
+        "required": [
+          "email",
+          "displayName",
+          "role",
+          "temporaryPassword"
+        ]
+      },
+      "SetActiveDto": {
+        "type": "object",
+        "properties": {
+          "isActive": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "isActive"
+        ]
+      }
+    }
+  }
+}

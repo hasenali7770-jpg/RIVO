@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import { Logger, ValidationPipe, VersioningType } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { SwaggerModule } from '@nestjs/swagger';
 import { Logger as PinoLogger } from 'nestjs-pino';
 import helmet from 'helmet';
 import express from 'express';
@@ -9,6 +9,7 @@ import * as Sentry from '@sentry/node';
 
 import { EnvService } from './common/env/env.service';
 import { AppModule } from './app.module';
+import { buildOpenApiConfig } from './openapi.config';
 
 async function bootstrap(): Promise<void> {
   // Environment is validated before Nest starts: a misconfigured deployment must
@@ -89,27 +90,7 @@ async function bootstrap(): Promise<void> {
   app.enableShutdownHooks();
 
   if (envService.swaggerEnabled) {
-    const config = new DocumentBuilder()
-      .setTitle('RIVO API')
-      .setDescription(
-        'RIVO | ريفو — خرائط | داركم.\n\n' +
-          'Smart navigation and the Iraqi real-estate marketplace in one API.\n\n' +
-          '**Business rules enforced server-side:** 8–18 property photos, minimum 1080p reels, ' +
-          'a 3,000 IQD listing fee, and payment state that only a verified gateway webhook can advance.',
-      )
-      .setVersion('1.0.0')
-      .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT' }, 'user')
-      .addBearerAuth({ type: 'http', scheme: 'bearer' }, 'admin')
-      .addServer(env.API_BASE_URL)
-      .addTag('auth', 'Phone OTP sign-in, token rotation, device sessions')
-      .addTag('properties', 'Darcom listings: create, search, moderate')
-      .addTag('media', 'Photo upload to R2 and AI enhancement jobs')
-      .addTag('reels', 'Property Reels: Cloudflare Stream upload and feed')
-      .addTag('payments', '3,000 IQD listing fee and gateway webhooks')
-      .addTag('maps', 'Search, traffic-aware routing, route feedback')
-      .addTag('traffic', 'Road incidents and consented telemetry')
-      .addTag('admin', 'Admin dashboard API (role-gated)')
-      .build();
+    const config = buildOpenApiConfig(env.API_BASE_URL);
 
     const document = SwaggerModule.createDocument(app, config);
     SwaggerModule.setup('api/docs', app, document, {
