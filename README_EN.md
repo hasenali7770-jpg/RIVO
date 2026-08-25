@@ -171,4 +171,6 @@ around them.
 | [Backup and restore](./docs/deployment/BACKUP_RESTORE.md) | nightly dumps and a tested restore |
 | [Acceptance report](./docs/acceptance-tests/ACCEPTANCE_REPORT.md) | what was actually verified |
 | [Accounts and purchases](./docs/purchase-checklist/ACCOUNTS_AND_PURCHASES.md) | what to buy, in whose name |
+| [Legal drafts](./docs/legal/) | privacy, terms, listing, AI and community policies — for legal review |
+| [Store release checklist](./docs/store-release/STORE_CHECKLIST.md) | what Apple and Google need |
 | [Initial audit](./docs/architecture/AUDIT.md) | what existed at the start |

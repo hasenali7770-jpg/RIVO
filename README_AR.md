@@ -162,4 +162,6 @@ DATABASE_URL='postgresql://postgres@127.0.0.1:5432/rivo_test?schema=public' \
 | [النسخ الاحتياطي والاسترجاع](./docs/deployment/BACKUP_RESTORE.md) | نسخة يومية واسترجاع مُجرَّب |
 | [تقرير القبول](./docs/acceptance-tests/ACCEPTANCE_REPORT.md) | ما جرى التحقق منه فعلياً |
 | [الحسابات والمشتريات](./docs/purchase-checklist/ACCOUNTS_AND_PURCHASES.md) | ما يجب شراؤه وباسم من |
+| [المسودات القانونية](./docs/legal/) | الخصوصية والشروط وسياسات النشر والذكاء الاصطناعي والمجتمع — للمراجعة القانونية |
+| [قائمة النشر في المتاجر](./docs/store-release/STORE_CHECKLIST.md) | متطلبات آبل وغوغل |
 | [التدقيق الأولي](./docs/architecture/AUDIT.md) | ما كان موجوداً عند البدء |
