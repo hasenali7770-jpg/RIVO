@@ -19,8 +19,15 @@ process.env.JWT_REFRESH_SECRET =
 process.env.OTP_PROVIDER = 'console';
 process.env.PAYMENT_PROVIDER = process.env.PAYMENT_PROVIDER ?? 'manual';
 process.env.AI_PROVIDER = 'none';
+/**
+ * The suite truncates every table, so it must never inherit DATABASE_URL: the
+ * run instructions tell you to `source .env` before starting the API, and doing
+ * that in the same shell would point the reset at your working database.
+ * TEST_DATABASE_URL is the only way to redirect it, and PrismaService refuses
+ * any database not named as a test database regardless.
+ */
 process.env.DATABASE_URL =
-  process.env.TEST_DATABASE_URL ?? process.env.DATABASE_URL ?? 'postgresql://postgres@127.0.0.1:5432/rivo_test?schema=public';
+  process.env.TEST_DATABASE_URL ?? 'postgresql://postgres@127.0.0.1:5432/rivo_test?schema=public';
 process.env.REDIS_URL = process.env.REDIS_URL ?? 'redis://127.0.0.1:6379';
 
 jest.setTimeout(60_000);

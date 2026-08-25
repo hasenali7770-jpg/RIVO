@@ -53,12 +53,28 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
   }
 
   /**
-   * Deletes every row, in dependency order. Test-only: refuses to run outside
-   * APP_ENV=test so it can never be reached by a production code path.
+   * Deletes every row. Test-only, and guarded twice.
+   *
+   * APP_ENV alone is not enough: the e2e bootstrap sets APP_ENV=test itself, so
+   * that check passes no matter which database DATABASE_URL names. A developer
+   * who sources .env before running the suite — which is what the run
+   * instructions say to do — would have their working database truncated, and
+   * an exported staging URL would take staging with it. The database name is
+   * therefore checked as well: this refuses to touch anything not explicitly
+   * marked as a test database.
    */
   async truncateAllForTests(): Promise<void> {
     if (EnvService.instance.APP_ENV !== 'test') {
       throw new Error('truncateAllForTests() is only available when APP_ENV=test');
+    }
+
+    const database = PrismaService.databaseNameOf(EnvService.instance.DATABASE_URL);
+    if (!/(^|[_-])test$/.test(database)) {
+      throw new Error(
+        `Refusing to truncate database "${database}": it is not named as a test database. ` +
+          'Point TEST_DATABASE_URL at a database whose name ends in "_test" (for example rivo_test) ' +
+          'and re-run. This guard exists because the suite deletes every row.',
+      );
     }
     const tables = await this.$queryRaw<Array<{ tablename: string }>>`
       SELECT tablename FROM pg_tables
@@ -72,6 +88,15 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
     await this.$executeRawUnsafe(`SET session_replication_role = 'replica'`);
     await this.$executeRawUnsafe(`TRUNCATE TABLE ${list} RESTART IDENTITY CASCADE`);
     await this.$executeRawUnsafe(`SET session_replication_role = 'origin'`);
+  }
+
+  /** Database name from a PostgreSQL connection URL, or '' if it has none. */
+  private static databaseNameOf(url: string): string {
+    try {
+      return new URL(url).pathname.replace(/^\//, '');
+    } catch {
+      return '';
+    }
   }
 }
 
