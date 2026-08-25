@@ -1,0 +1,29 @@
+{
+  "name": "rivo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "RIVO | ريفو — خرائط | داركم. Smart navigation + Iraqi real-estate marketplace.",
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=20.11.0"
+  },
+  "workspaces": [
+    "packages/config",
+    "packages/contracts",
+    "apps/api",
+    "apps/admin"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "api:dev": "npm run start:dev -w @rivo/api",
+    "api:migrate": "npm run migrate:deploy -w @rivo/api",
+    "api:seed": "npm run seed -w @rivo/api",
+    "admin:dev": "npm run dev -w @rivo/admin",
+    "stack:up": "docker compose up -d --build",
+    "stack:down": "docker compose down",
+    "stack:logs": "docker compose logs -f api worker"
+  }
+}
