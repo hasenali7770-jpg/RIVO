@@ -6,7 +6,7 @@ import { ApiError, api, getAdmin, qs } from '@/lib/api';
 import { can } from '@/lib/permissions';
 import { Shell } from '@/components/shell';
 import { Badge, ConfirmDialog, EmptyState, ErrorState, PageHeader, Pagination, Spinner } from '@/components/ui';
-import { SELLER_TYPE_LABELS, formatDate, formatRelative } from '@/lib/format';
+import { SELLER_TYPE_LABELS, formatRelative } from '@/lib/format';
 
 interface UserRow {
   id: string;

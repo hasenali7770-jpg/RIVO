@@ -6,7 +6,6 @@ import { ApiError, api, getAdmin, qs } from '@/lib/api';
 import { can } from '@/lib/permissions';
 import { Shell } from '@/components/shell';
 import { Badge, ConfirmDialog, EmptyState, ErrorState, PageHeader, Pagination, Spinner } from '@/components/ui';
-import { formatDate } from '@/lib/format';
 
 interface ReelRow {
   id: string;

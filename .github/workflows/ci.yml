@@ -112,8 +112,47 @@ jobs:
       - name: Build
         run: npm run build -w @rivo/api
 
+      - name: Acceptance run against the built API
+        # The Master Plan §21 checklist, executed against a real server rather
+        # than asserted. This is what catches a regression in a business rule
+        # that unit tests would not — the 8-18 photo range, the 3,000 IQD fee,
+        # who may approve a listing, whether a forged webhook can settle a
+        # payment. The Mapbox checks report SKIP here; everything else runs.
+        #
+        # On its own database: the e2e suite leaves admin accounts behind, and
+        # the seed refuses to create a bootstrap admin when any admin already
+        # exists — correctly, but it would leave this step unable to sign in.
+        run: |
+          # The init migration creates postgis, pgcrypto and pg_trgm itself.
+          psql "postgresql://rivo:rivo_ci@localhost:5432/postgres" -c 'CREATE DATABASE rivo_acceptance;'
+          DATABASE_URL="$ACCEPTANCE_DATABASE_URL" \
+            npx prisma migrate deploy --schema apps/api/prisma/schema.prisma
+          DATABASE_URL="$ACCEPTANCE_DATABASE_URL" APP_ENV=development \
+            npm run seed -w @rivo/api
+
+          DATABASE_URL="$ACCEPTANCE_DATABASE_URL" APP_ENV=development \
+            node apps/api/dist/main.js &
+          API_PID=$!
+          for _ in $(seq 1 30); do
+            curl -sf http://localhost:3000/api/v1/health >/dev/null && break
+            sleep 2
+          done
+
+          set +e
+          DATABASE_URL="$ACCEPTANCE_DATABASE_URL" ./infra/scripts/acceptance.sh
+          RESULT=$?
+          set -e
+          kill "$API_PID" 2>/dev/null || true
+          exit "$RESULT"
+        env:
+          ACCEPTANCE_DATABASE_URL: postgresql://rivo:rivo_ci@localhost:5432/rivo_acceptance?schema=public
+          PORT: '3000'
+          ADMIN_BOOTSTRAP_EMAIL: ci-admin@rivo.local
+          ADMIN_BOOTSTRAP_PASSWORD: ci-only-bootstrap-password-2026
+          PGPASSWORD: rivo_ci
+
   admin:
-    name: Admin — typecheck and build
+    name: Admin — lint, typecheck and build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -129,6 +168,9 @@ jobs:
         run: |
           npm run build -w @rivo/config
           npm run build -w @rivo/contracts
+
+      - name: Lint
+        run: npm run lint -w @rivo/admin
 
       - name: Typecheck
         run: npm run typecheck -w @rivo/admin

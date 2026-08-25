@@ -40,7 +40,7 @@ const config: Config = {
       fontFamily: {
         // Cairo and Tajawal render Arabic well and carry a full Latin set, so
         // one stack serves both scripts without a visible switch.
-        sans: ['Cairo', 'Tajawal', 'system-ui', '-apple-system', 'Segoe UI', 'sans-serif'],
+        sans: ['var(--font-cairo)', 'Cairo', 'Tajawal', 'system-ui', '-apple-system', 'Segoe UI', 'sans-serif'],
         mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
       },
       borderRadius: { xl: '0.875rem', '2xl': '1.25rem' },
