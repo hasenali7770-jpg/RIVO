@@ -40,3 +40,11 @@ apps/mobile/.packages
 *.log
 tmp/
 .pgdata/
+
+# Flutter platform build output and signing material
+apps/mobile/android/key.properties
+apps/mobile/android/local.properties
+apps/mobile/android/.gradle/
+apps/mobile/ios/Flutter/Generated.xcconfig
+apps/mobile/ios/Flutter/flutter_export_environment.sh
+apps/mobile/.flutter-plugins*

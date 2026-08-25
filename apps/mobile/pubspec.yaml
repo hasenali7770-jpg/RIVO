@@ -1,0 +1,85 @@
+name: rivo
+description: "RIVO | ريفو — خرائط | داركم. Smart navigation and Iraqi real estate in one app."
+publish_to: "none"
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.5.0 <4.0.0"
+  flutter: ">=3.24.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  # State management — Riverpod, used consistently throughout (Master Plan §3).
+  flutter_riverpod: ^2.6.1
+  riverpod_annotation: ^2.6.1
+
+  # Navigation
+  go_router: ^14.6.2
+
+  # Networking
+  dio: ^5.7.0
+
+  # Secure storage for refresh tokens — never SharedPreferences (Master Plan §3).
+  flutter_secure_storage: ^9.2.2
+  shared_preferences: ^2.3.4
+
+  # Maps. The official Mapbox Flutter SDK renders the map; turn-by-turn
+  # navigation is bridged to the native Navigation SDK through platform channels
+  # (see lib/features/maps/navigation/native_navigation.dart).
+  mapbox_maps_flutter: ^2.6.0
+  geolocator: ^13.0.2
+  permission_handler: ^11.3.1
+
+  # Media
+  image_picker: ^1.1.2
+  video_player: ^2.9.2
+  video_compress: ^3.1.3
+
+  # HTTP upload of presigned objects
+  http: ^1.2.2
+  http_parser: ^4.1.0
+
+  # Utilities
+  intl: ^0.20.3
+  collection: ^1.18.0
+  crypto: ^3.0.6
+  path_provider: ^2.1.5
+  url_launcher: ^6.3.1
+  share_plus: ^10.1.2
+  connectivity_plus: ^6.1.0
+  device_info_plus: ^11.2.0
+  package_info_plus: ^8.1.2
+  cached_network_image: ^3.4.1
+
+  # Crash reporting
+  sentry_flutter: ^8.12.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  build_runner: ^2.4.14
+  riverpod_generator: ^2.6.3
+  custom_lint: ^0.7.0
+  riverpod_lint: ^2.6.3
+
+flutter:
+  uses-material-design: true
+  generate: true
+  assets:
+    - assets/images/
+  fonts:
+    - family: Cairo
+      fonts:
+        - asset: assets/fonts/Cairo-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Cairo-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Cairo-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Cairo-Bold.ttf
+          weight: 700

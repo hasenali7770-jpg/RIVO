@@ -3,7 +3,7 @@ import {
   DEFAULT_GOVERNORATE,
   PROPERTY_PHOTO_MAX,
   PROPERTY_PHOTO_MIN,
-  isInsideIraq,
+  isWithinIraqBounds,
 } from '@rivo/config';
 import type { ContactPreference, ListingPurpose, Prisma, PropertyStatus, PropertyType, SellerType } from '@prisma/client';
 import { PrismaService } from '../../common/prisma/prisma.service';
@@ -649,7 +649,7 @@ export class PropertiesService {
   }
 
   private assertCoordinatesUsable(lat: number, lng: number) {
-    if (!isInsideIraq(lng, lat)) {
+    if (!isWithinIraqBounds(lng, lat)) {
       throw AppError.badRequest({
         code: ErrorCode.VALIDATION_FAILED,
         message: 'The map pin must be inside Iraq',

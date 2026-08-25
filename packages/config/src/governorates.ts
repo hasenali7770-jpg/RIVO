@@ -42,7 +42,21 @@ export const DEFAULT_MAP_CENTER = GOVERNORATES[0].center;
 /** Bounding box for Iraq (minLng, minLat, maxLng, maxLat) — used to bias/limit geocoding. */
 export const IRAQ_BBOX: [number, number, number, number] = [38.7936, 28.9971, 48.5679, 37.3806];
 
-export function isInsideIraq(lng: number, lat: number): boolean {
+/**
+ * Approximate containment check.
+ *
+ * This tests a BOUNDING BOX, not the national border, so it is deliberately
+ * permissive: a rectangle around Iraq also covers northern Kuwait, slivers of
+ * western Iran, and parts of eastern Syria and Jordan. Its job is to reject the
+ * obviously-wrong cases cheaply — a device reporting 0,0 with no GPS fix, or a
+ * pin left in another country — not to be the authority on where a listing may be.
+ *
+ * A human moderator reviews every listing's location before it can be published
+ * (Master Plan §6 step 10); that review, not this function, is what keeps
+ * out-of-country pins off Darcom. If a stricter automated check is ever needed,
+ * PostGIS is already available: load an Iraq polygon and use ST_Contains.
+ */
+export function isWithinIraqBounds(lng: number, lat: number): boolean {
   const [minLng, minLat, maxLng, maxLat] = IRAQ_BBOX;
   return lng >= minLng && lng <= maxLng && lat >= minLat && lat <= maxLat;
 }
