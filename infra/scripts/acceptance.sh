@@ -94,8 +94,16 @@ SELLER_PHONE="+96477${RANDOM:0:2}${RANDOM:0:6}"
 OTP="$(curl -s -X POST "$API/auth/request-otp" -H 'Content-Type: application/json' -d "{\"phone\":\"$SELLER_PHONE\"}")"
 DEV_CODE="$(printf '%s' "$OTP" | jq -r '.devCode // empty')"
 if [ -z "$DEV_CODE" ]; then
-  echo "No devCode in the OTP response — this deployment uses a real SMS provider, so the seller leg cannot be automated."
-  echo "Run the seller steps by hand, or point the script at a staging deployment with OTP_PROVIDER=console."
+  case "$(printf '%s' "$OTP" | jq -r '.error.code // "none"')" in
+    RATE_LIMITED)
+      echo "The OTP endpoint is rate-limited for this address — a previous run used up the hourly budget."
+      echo "Wait for the window to pass, or restart the API and clear the Redis counters: redis-cli --scan --pattern 'otp:*' | xargs -r redis-cli del" ;;
+    none)
+      echo "No devCode in the OTP response — this deployment uses a real SMS provider, so the seller leg cannot be automated."
+      echo "Run the seller steps by hand, or point the script at a staging deployment with OTP_PROVIDER=console." ;;
+    *)
+      echo "Could not request an OTP: $(printf '%s' "$OTP" | jq -c '.error')" ;;
+  esac
   exit 1
 fi
 SELLER="$(curl -s -X POST "$API/auth/verify-otp" -H 'Content-Type: application/json' \
@@ -268,30 +276,55 @@ else
     "$API/maps/search?q=test"
 fi
 
-INC="$(curl -s -X POST "$API/traffic/incidents" "${SELLER_AUTH[@]}" -H 'Content-Type: application/json' \
-  -d '{"type":"ROAD_CLOSURE","lat":33.3140,"lng":44.3600,"note":"الطريق مغلق بسبب أعمال"}')"
+# Reported from an account of its own: whether a report is published straight
+# away depends on the reporter's history, so the "held for moderation" path only
+# exists for an account with no track record.
+REPORTER_PHONE="+9647${RANDOM:0:1}${RANDOM}${RANDOM:0:3}"
+# A report at coordinates an earlier run already used would be merged into that
+# still-active incident instead of creating a new one, so each run picks its own
+# spot a few hundred metres along the same Baghdad street.
+INC_LAT="33.3$(printf '%03d' $((RANDOM % 900 + 50)))"
+INC_LNG="44.3$(printf '%03d' $((RANDOM % 900 + 50)))"
+R_OTP="$(curl -s -X POST "$API/auth/request-otp" -H 'Content-Type: application/json' -d "{\"phone\":\"$REPORTER_PHONE\"}")"
+REPORTER="$(curl -s -X POST "$API/auth/verify-otp" -H 'Content-Type: application/json' \
+  -d "{\"phone\":\"$REPORTER_PHONE\",\"challengeToken\":\"$(printf '%s' "$R_OTP" | jq -r .challengeToken)\",\"code\":\"$(printf '%s' "$R_OTP" | jq -r .devCode)\",\"platform\":\"android\"}" \
+  | jq -r '.accessToken // empty')"
+
+INC="$(curl -s -X POST "$API/traffic/incidents" -H "Authorization: Bearer ${REPORTER:-$SELLER}" -H 'Content-Type: application/json' \
+  -d "{\"type\":\"ROAD_CLOSURE\",\"lat\":$INC_LAT,\"lng\":$INC_LNG,\"note\":\"الطريق مغلق بسبب أعمال\"}")"
 INC_ID="$(printf '%s' "$INC" | jq -r '.id // empty')"
-nearby()  { curl -s "$API/traffic/incidents?lat=33.3140&lng=44.3600&radiusM=2000"; }
+nearby()  { curl -s "$API/traffic/incidents?lat=$INC_LAT&lng=$INC_LNG&radiusM=500"; }
 faraway() { curl -s "$API/traffic/incidents?lat=30.5081&lng=47.7835&radiusM=2000"; }
+listed()  { nearby | jq -e --arg id "$INC_ID" '.incidents | map(.id) | index($id)' >/dev/null; }
 
 if [ -n "$INC_ID" ]; then
   pass "an incident report is saved with coordinates"
-  [ "$(sql "SELECT round(lat::numeric,4)||','||round(lng::numeric,4) FROM road_incidents WHERE id='$INC_ID';")" = "33.3140,44.3600" ] \
+  [ "$(sql "SELECT round(lat::numeric,4)||','||round(lng::numeric,4) FROM road_incidents WHERE id='$INC_ID';")" = "$INC_LAT,$INC_LNG" ] \
     && pass "the incident's coordinates round-trip through PostGIS" || fail "incident coordinates did not round-trip"
 
-  nearby | jq -e --arg id "$INC_ID" '.incidents | map(.id) | index($id) | not' >/dev/null \
-    && pass "an unmoderated report is not yet shown to other drivers" || fail "an unmoderated report was published immediately"
+  INC_STATUS="$(sql "SELECT status FROM road_incidents WHERE id='$INC_ID';")"
+  if [ "$INC_STATUS" = "PENDING_REVIEW" ]; then
+    listed && fail "a report held for review was shown to other drivers" \
+           || pass "a new reporter's first report is held for review"
+    check 200 "a moderator can publish a held report" \
+      -X POST "$API/admin/incidents/$INC_ID/approve" -H "Authorization: Bearer ${STAFF[MODERATOR]}" \
+      -H 'Content-Type: application/json' -d '{"note":"تم التحقق من البلاغ."}'
+  else
+    skip "a new reporter's first report is held for review" \
+         "this reporter already has a track record, so the report was published on reputation (status $INC_STATUS)"
+    skip "a moderator can publish a held report" "the report did not need holding"
+  fi
 
-  check 200 "a moderator can publish a held report" \
-    -X POST "$API/admin/incidents/$INC_ID/approve" -H "Authorization: Bearer ${STAFF[MODERATOR]}" \
-    -H 'Content-Type: application/json' -d '{"note":"تم التحقق من البلاغ."}'
-
-  nearby | jq -e --arg id "$INC_ID" '.incidents | map(.id) | index($id)' >/dev/null \
-    && pass "the incident appears to a nearby driver after moderation" || fail "a nearby driver cannot see the moderated incident"
+  listed && pass "the incident appears to a nearby driver" || fail "a nearby driver cannot see the incident"
   faraway | jq -e --arg id "$INC_ID" '.incidents | map(.id) | index($id) | not' >/dev/null \
     && pass "the incident does not appear 400 km away" || fail "a distant driver was shown the incident"
   nearby | jq -e --arg id "$INC_ID" '.incidents[] | select(.id==$id) | has("reportedBy") | not' >/dev/null \
     && pass "the reporter is not identified to other drivers" || fail "the incident response names its reporter"
+
+  check 200 "a moderator can take a false report off the map" \
+    -X POST "$API/admin/incidents/$INC_ID/remove" -H "Authorization: Bearer ${STAFF[MODERATOR]}" \
+    -H 'Content-Type: application/json' -d '{"reason":"بلاغ غير صحيح - اختبار القبول"}'
+  listed && fail "a removed report is still on the map" || pass "a removed report disappears from the map"
 else
   fail "an incident report could not be saved: $(printf '%s' "$INC" | jq -c '.error')"
 fi
