@@ -5,6 +5,7 @@ import { SwaggerModule } from '@nestjs/swagger';
 import { Logger as PinoLogger } from 'nestjs-pino';
 import helmet from 'helmet';
 import express from 'express';
+import { join } from 'node:path';
 import * as Sentry from '@sentry/node';
 
 import { EnvService } from './common/env/env.service';
@@ -49,6 +50,26 @@ async function bootstrap(): Promise<void> {
   // without it every caller shares one rate-limit bucket.
   if (env.TRUST_PROXY) {
     app.getHttpAdapter().getInstance().set('trust proxy', 1);
+  }
+
+  // Sample photos for a demonstration deployment, served from the API so a
+  // populated marketplace can be shown before a Cloudflare R2 bucket exists.
+  // Never in production: there, photos come from R2 and this directory has no
+  // reason to be reachable.
+  if (!envService.isProduction) {
+    const demoMedia = express.static(join(__dirname, '..', 'public', 'demo-media'), { maxAge: '1h' });
+    app.use(
+      '/demo-media',
+      // Object keys are unique per listing — (bucket, object_key) is a unique
+      // constraint, as it must be when the key names a real file — but they all
+      // point at the same handful of sample images. Resolve by basename so
+      // demo/RV-DEMO03/sample-2.jpg and demo/RV-DEMO04/sample-2.jpg both serve
+      // sample-2.jpg.
+      (req: express.Request, res: express.Response, next: express.NextFunction) => {
+        req.url = `/${req.url.split('/').pop() ?? ''}`;
+        demoMedia(req, res, next);
+      },
+    );
   }
 
   app.use(

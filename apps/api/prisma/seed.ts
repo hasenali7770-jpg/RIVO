@@ -15,12 +15,22 @@
  */
 import { PrismaClient } from '@prisma/client';
 import { randomUUID } from 'node:crypto';
-import { FEATURE_FLAG_DEFAULTS } from '@rivo/config';
+import { FEATURE_FLAG_DEFAULTS, LISTING_FEE_IQD } from '@rivo/config';
 import { hashSecret } from '../src/common/crypto/hash';
 
 const prisma = new PrismaClient();
 
 const SEED_DEMO = process.env.RIVO_SEED_DEMO === 'true';
+/**
+ * Publishes the demo listings with sample photos, for a demonstration
+ * deployment that has to look like the product. Implies RIVO_SEED_DEMO.
+ *
+ * The default stays unpublished: on a shared development database, sample
+ * listings that cannot reach PUBLISHED cannot be mistaken for real inventory.
+ * This flag is the deliberate exception, and it is refused in production along
+ * with all other demo content.
+ */
+const SEED_DEMO_PUBLISHED = process.env.RIVO_SEED_DEMO_PUBLISHED === 'true';
 const APP_ENV = process.env.APP_ENV ?? 'development';
 
 async function main(): Promise<void> {
@@ -29,10 +39,10 @@ async function main(): Promise<void> {
   await seedFeatureFlags();
   await seedBootstrapAdmin();
 
-  if (SEED_DEMO) {
+  if (SEED_DEMO || SEED_DEMO_PUBLISHED) {
     if (APP_ENV === 'production') {
       throw new Error(
-        'RIVO_SEED_DEMO=true was set with APP_ENV=production. Demo content must never be created in production.',
+        'Demo seeding was requested with APP_ENV=production. Demo content must never be created in production.',
       );
     }
     await seedDemoContent();
@@ -112,6 +122,78 @@ const DEMO_PROPERTIES: Array<{
   { type: 'COMMERCIAL', purpose: 'RENT', title: 'عقار تجاري للإيجار', priceIqd: 3_000_000n, areaSqm: 220, bedrooms: null, bathrooms: 2 },
 ];
 
+/** Sample photos committed at apps/api/public/demo-media and served by the API. */
+const DEMO_PHOTO_COUNT = 8;
+
+/**
+ * Gives a demo listing its sample photos, records its paid fee, and walks it to
+ * PUBLISHED — or leaves it in PENDING_REVIEW so the moderation queue has
+ * something in it.
+ *
+ * The photo rows go through the same table and the same CHECK constraint as
+ * real ones, so a demo listing that failed the 8-18 rule would fail here too —
+ * the demonstration exercises the rule rather than bypassing it. The listing
+ * fee is recorded as PAID so the money trail is complete and the admin
+ * dashboard shows a coherent picture, and every row is flagged is_demo.
+ */
+async function publishDemoListing(
+  propertyId: string,
+  ownerId: string,
+  reference: string,
+  index: number,
+  publish: boolean,
+): Promise<void> {
+  for (let photo = 1; photo <= DEMO_PHOTO_COUNT; photo += 1) {
+    await prisma.propertyMedia.create({
+      data: {
+        propertyId,
+        kind: 'ORIGINAL',
+        // Unique per listing, as (bucket, object_key) requires, but every key
+        // resolves to the same sample image — the demo media handler serves by
+        // basename.
+        objectKey: `demo/${reference}/sample-${photo}.jpg`,
+        bucket: 'rivo-demo-media',
+        mimeType: 'image/jpeg',
+        sizeBytes: 16_000,
+        width: 1200,
+        height: 900,
+        position: photo - 1,
+        uploadConfirmed: true,
+        isDemo: true,
+      },
+    });
+  }
+
+  await prisma.listingPayment.create({
+    data: {
+      propertyId,
+      userId: ownerId,
+      amountIqd: LISTING_FEE_IQD,
+      currency: 'IQD',
+      status: 'PAID',
+      provider: 'manual',
+      merchantRef: `RIVO-DEMO-${String(index + 1).padStart(2, '0')}`,
+      paidAt: new Date(),
+    },
+  });
+
+  const cover = await prisma.propertyMedia.findFirst({
+    where: { propertyId, kind: 'ORIGINAL' },
+    orderBy: { position: 'asc' },
+    select: { id: true },
+  });
+
+  await prisma.property.update({
+    where: { id: propertyId },
+    data: {
+      status: publish ? 'PUBLISHED' : 'PENDING_REVIEW',
+      submittedAt: new Date(),
+      publishedAt: publish ? new Date() : null,
+      coverMediaId: cover?.id ?? null,
+    },
+  });
+}
+
 async function seedDemoContent(): Promise<void> {
   console.log('  · creating demo content (all rows flagged is_demo = true)');
 
@@ -156,8 +238,10 @@ async function seedDemoContent(): Promise<void> {
         ownerId: demoUser.id,
         type: spec.type,
         purpose: spec.purpose,
-        // Demo rows stay in DRAFT with zero photos. They cannot be published:
-        // the 8-photo rule and the photo-count CHECK constraint both refuse it.
+        // Always created in DRAFT: the photo-count CHECK constraint exempts
+        // DRAFT and refuses any later status with fewer than 8 photos, so a row
+        // cannot be born published. publishDemoListing adds the photos first and
+        // only then moves it — the same order a real listing goes through.
         status: 'DRAFT',
         title: `[عينة] ${spec.title} في ${area.district}`,
         description:
@@ -189,9 +273,19 @@ async function seedDemoContent(): Promise<void> {
       )
       ON CONFLICT (property_id) DO NOTHING
     `;
+    if (SEED_DEMO_PUBLISHED) {
+      // The last two stay in PENDING_REVIEW: a demonstration needs a moderation
+      // queue with something in it, not only a populated marketplace.
+      await publishDemoListing(property.id, demoUser.id, reference, i, i < DEMO_PROPERTIES.length - 2);
+    }
+
     created += 1;
   }
-  console.log(`  ✓ ${created} demo listings (DRAFT, no photos, is_demo = true)`);
+  console.log(
+    SEED_DEMO_PUBLISHED
+      ? `  ✓ ${created} demo listings with ${DEMO_PHOTO_COUNT} sample photos each — ${created - 2} published, 2 waiting in the review queue (is_demo = true)`
+      : `  ✓ ${created} demo listings (DRAFT, no photos, is_demo = true)`,
+  );
 
   // Demo road incidents, so the map layer has something to render locally.
   const incidentSpecs: Array<{ type: string; lat: number; lng: number; note: string }> = [

@@ -1,3 +1,14 @@
+/**
+ * The local API origin is plain HTTP, so a development build has to allow it
+ * explicitly; a production build stays HTTPS-only. Photos come from R2 and
+ * reels from Cloudflare Stream, both HTTPS, so nothing is lost by the
+ * restriction — and a demonstration deployment that serves sample photos from
+ * the API on localhost still works.
+ */
+const isDev = process.env.NODE_ENV !== 'production';
+const localApi = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:3000';
+const devOrigin = isDev && localApi.startsWith('http://') ? ` ${localApi}` : '';
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
@@ -20,11 +31,11 @@ const nextConfig = {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
-              "img-src 'self' data: blob: https:",
-              "media-src 'self' blob: https:",
+              `img-src 'self' data: blob: https:${devOrigin}`,
+              `media-src 'self' blob: https:${devOrigin}`,
               "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
               "style-src 'self' 'unsafe-inline'",
-              "connect-src 'self' https: http://localhost:3000",
+              `connect-src 'self' https:${devOrigin}`,
               "frame-ancestors 'self'",
             ].join('; '),
           },
