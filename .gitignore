@@ -33,7 +33,13 @@ apps/mobile/.packages
 # Editors / OS
 .DS_Store
 .idea/
-.vscode/
+# VS Code: the shared workspace setup is committed so everyone gets the same
+# run configurations, tasks and recommended extensions. Personal settings are not.
+.vscode/*
+!.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/settings.json
+!.vscode/tasks.json
 *.swp
 
 # Local runtime
@@ -48,3 +54,6 @@ apps/mobile/android/.gradle/
 apps/mobile/ios/Flutter/Generated.xcconfig
 apps/mobile/ios/Flutter/flutter_export_environment.sh
 apps/mobile/.flutter-plugins*
+
+# Redis snapshot, written by redis-server when it is started from this directory
+dump.rdb

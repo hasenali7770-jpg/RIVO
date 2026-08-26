@@ -1,0 +1,14 @@
+{
+  "recommendations": [
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "prisma.prisma",
+    "dart-code.dart-code",
+    "dart-code.flutter",
+    "ms-azuretools.vscode-docker",
+    "bradlc.vscode-tailwindcss",
+    "humao.rest-client",
+    "ckolkman.vscode-postgres",
+    "ms-vscode-remote.remote-wsl"
+  ]
+}

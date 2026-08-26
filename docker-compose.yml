@@ -52,6 +52,43 @@ services:
       timeout: 3s
       retries: 5
 
+  # Applies migrations once, then exits. The runtime image is installed with
+  # --omit=dev and has no Prisma CLI, so this uses the build stage, which does.
+  # api and worker wait for it to complete successfully: starting them against a
+  # database with no tables produced a stack that came up and then failed every
+  # request.
+  migrate:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+      target: build
+    env_file: [.env]
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-rivo}:${POSTGRES_PASSWORD:-rivo_local_dev}@postgres:5432/${POSTGRES_DB:-rivo}?schema=public
+    depends_on:
+      postgres: { condition: service_healthy }
+    working_dir: /app
+    command: ['npx', 'prisma', 'migrate', 'deploy', '--schema', 'apps/api/prisma/schema.prisma']
+    restart: 'no'
+
+  # Feature flags and the bootstrap Super Admin. Set RIVO_SEED_DEMO_PUBLISHED=true
+  # in .env to also create the sample marketplace used for demonstrations; it is
+  # refused outright when APP_ENV=production.
+  seed:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+      target: build
+    env_file: [.env]
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-rivo}:${POSTGRES_PASSWORD:-rivo_local_dev}@postgres:5432/${POSTGRES_DB:-rivo}?schema=public
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+    working_dir: /app
+    command: ['npm', 'run', 'seed', '-w', '@rivo/api']
+    restart: 'no'
+
   api:
     build:
       context: .
@@ -67,6 +104,7 @@ services:
     depends_on:
       postgres: { condition: service_healthy }
       redis: { condition: service_healthy }
+      migrate: { condition: service_completed_successfully }
     ports:
       - '3000:3000'
 
@@ -83,6 +121,7 @@ services:
     depends_on:
       postgres: { condition: service_healthy }
       redis: { condition: service_healthy }
+      migrate: { condition: service_completed_successfully }
     # Same image, different entrypoint: media and AI work must not compete with
     # request handling for the API's event loop.
     command: ['node', 'dist/worker.js']

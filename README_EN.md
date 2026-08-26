@@ -53,6 +53,13 @@ docs/
 
 ---
 
+## Running it from VS Code
+
+Step-by-step, from cloning to a running app — Docker or native, Windows, macOS
+or Linux: **[دليل التشغيل من VS Code](./docs/getting-started/VSCODE_AR.md)**
+(Arabic). The workspace ships run configurations and tasks, so most of it is
+`Ctrl+Shift+P` → `Tasks: Run Task`.
+
 ## Show it to someone — one command
 
 ```bash

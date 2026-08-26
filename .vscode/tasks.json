@@ -1,0 +1,79 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Demo: run the whole thing",
+      "type": "shell",
+      "command": "./infra/scripts/demo.sh",
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "dedicated" },
+      "detail": "Populated marketplace, admin dashboard, sample photos. No paid account needed."
+    },
+    {
+      "label": "Docker: start the stack",
+      "type": "shell",
+      "command": "docker compose up -d --build",
+      "problemMatcher": [],
+      "detail": "Postgres + PostGIS, Redis, migrations, seed, API, worker, admin."
+    },
+    {
+      "label": "Docker: follow the logs",
+      "type": "shell",
+      "command": "docker compose logs -f api worker admin",
+      "problemMatcher": [],
+      "isBackground": true
+    },
+    {
+      "label": "Docker: stop the stack",
+      "type": "shell",
+      "command": "docker compose down",
+      "problemMatcher": []
+    },
+    {
+      "label": "Database: apply migrations",
+      "type": "shell",
+      "command": "npm run api:migrate",
+      "problemMatcher": []
+    },
+    {
+      "label": "Database: seed",
+      "type": "shell",
+      "command": "npm run api:seed",
+      "problemMatcher": []
+    },
+    {
+      "label": "Check: verify Mapbox credentials",
+      "type": "shell",
+      "command": "./infra/scripts/verify-mapbox.sh",
+      "problemMatcher": [],
+      "detail": "Calls place search, routing, and the SDK download endpoint."
+    },
+    {
+      "label": "Check: acceptance run (Master Plan §21)",
+      "type": "shell",
+      "command": "./infra/scripts/acceptance.sh",
+      "problemMatcher": [],
+      "detail": "Needs the API already running."
+    },
+    {
+      "label": "Check: everything (typecheck, lint, tests)",
+      "type": "shell",
+      "command": "npm run typecheck && npm run lint && npm test",
+      "group": { "kind": "test", "isDefault": true },
+      "problemMatcher": ["$tsc"]
+    },
+    {
+      "label": "Mobile: analyze and test",
+      "type": "shell",
+      "command": "flutter analyze && flutter test",
+      "options": { "cwd": "${workspaceFolder}/apps/mobile" },
+      "problemMatcher": []
+    },
+    {
+      "label": "API: regenerate the OpenAPI reference",
+      "type": "shell",
+      "command": "npm run openapi:generate -w @rivo/api",
+      "problemMatcher": []
+    }
+  ]
+}
