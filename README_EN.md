@@ -53,6 +53,18 @@ docs/
 
 ---
 
+## Show it to someone — one command
+
+```bash
+./infra/scripts/demo.sh
+```
+
+Creates its own database, seeds a populated marketplace with sample photos and
+a moderation queue, and starts the API and the dashboard. No Cloudflare,
+payment or SMS account needed. For the live map, get a free Mapbox token first
+and export `MAPBOX_PUBLIC_TOKEN` and `MAPBOX_SECRET_TOKEN` — five minutes, no
+cost, and it is the account you need anyway.
+
 ## Run the whole stack with Docker
 
 ```bash
