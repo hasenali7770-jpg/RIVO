@@ -67,16 +67,28 @@ client adds the developer as a member.
 
 ### 8. Mapbox
 - Account and **billing profile** in the client's name.
-- Free tier: **50,000 map loads/month**, **100,000 Directions requests/month**,
-  **100,000 geocoding requests/month**. Usage-based above that.
+- The account page lists the current free allowances per service — read them
+  there rather than from any document, Mapbox changes them. At the time of
+  writing they include 50,000 web map loads and 25,000 monthly active users on
+  the mobile SDKs per month, with Directions and Geocoding each carrying their
+  own monthly allowance.
 - Create **two** tokens:
   - a **public** token (`pk.*`), **restricted by Android package name and iOS
-    bundle id**, for map rendering in the app;
-  - a **secret** token (`sk.*`) with Directions and Geocoding scopes, used
-    **server-side only**. This one never leaves the server.
-- **Confirm Navigation SDK commercial terms before launch** if native turn-by-turn
-  is enabled — Master Plan §19 flags this as needing confirmation, and it is
-  priced separately from the APIs above.
+    bundle id**, for map rendering in the app. The account's default public
+    token works to begin with;
+  - a **secret** token (`sk.*`) with the **`Downloads:Read`** secret scope,
+    used **server-side and on build machines only**.
+- **Neither Directions nor Geocoding requires a scope** — they work with the
+  default scopes every token carries. `Downloads:Read` is the only box to tick,
+  and it is not optional: without it Gradle and CocoaPods cannot download the
+  native Mapbox SDK and the mobile build fails with a bare `401`.
+- A secret token is displayed **once**. Copy it when it is created.
+- Setup detail, including where each credential goes on a build machine:
+  [`apps/mobile/MAPBOX_SETUP.md`](../../apps/mobile/MAPBOX_SETUP.md).
+- RIVO's turn-by-turn is implemented against the Directions API and needs no
+  Navigation SDK licence. **Confirm Navigation SDK commercial terms only if**
+  native voice guidance and the native HUD are added later — Master Plan §19
+  flags this, and it is priced separately from the APIs above.
 - Mapbox currently lists Iraq among the countries where ETAs use live and typical
   traffic, which is what makes the routing useful at launch.
 

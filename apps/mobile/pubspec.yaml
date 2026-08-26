@@ -27,9 +27,10 @@ dependencies:
   flutter_secure_storage: ^9.2.2
   shared_preferences: ^2.3.4
 
-  # Maps. The official Mapbox Flutter SDK renders the map; turn-by-turn
-  # navigation is bridged to the native Navigation SDK through platform channels
-  # (see lib/features/maps/navigation/native_navigation.dart).
+  # Maps. The official Mapbox Flutter SDK renders the map. Turn-by-turn guidance
+  # is implemented in Dart against the Directions API response
+  # (lib/features/maps/navigation_screen.dart), so no Navigation SDK licence is
+  # needed. The native SDK is what would add voice guidance and a native HUD.
   mapbox_maps_flutter: ^2.6.0
   geolocator: ^13.0.2
   permission_handler: ^11.3.1

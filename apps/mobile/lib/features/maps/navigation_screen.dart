@@ -19,11 +19,13 @@ import 'location_service.dart';
 
 /// Turn-by-turn navigation — Master Plan §4 "Navigation".
 ///
-/// Provides guidance, rerouting, arrival detection and route feedback. Voice
-/// guidance and the richer native HUD come from the Mapbox Navigation SDK, which
-/// is bridged through a platform channel (see `native_navigation.dart`); this
-/// Dart implementation is the always-available path and the fallback when the
-/// native SDK is not present on the build.
+/// Provides guidance, rerouting, arrival detection and route feedback, driven
+/// entirely by the step list the Directions API returns. There is no native
+/// bridge: this is the whole implementation, which is why RIVO needs no Mapbox
+/// Navigation SDK licence.
+///
+/// Voice guidance and a native heads-up display would require that SDK, and it
+/// is licensed separately — a later decision, not a dependency of this screen.
 class NavigationScreen extends ConsumerStatefulWidget {
   const NavigationScreen({
     this.destinationLat,
