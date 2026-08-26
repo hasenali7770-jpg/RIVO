@@ -53,6 +53,16 @@ docs/
 
 ---
 
+## First run — one command
+
+```bash
+./infra/scripts/setup.sh
+```
+
+Checks prerequisites, writes a .env with generated secrets, prepares the
+database, migrates, seeds sample content and starts everything. Chooses Docker
+or a local PostgreSQL and Redis on its own. Re-runnable.
+
 ## Where does this stand?
 
 ```bash

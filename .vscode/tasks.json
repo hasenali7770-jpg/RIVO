@@ -2,6 +2,18 @@
   "version": "2.0.0",
   "tasks": [
     {
+      "label": "★ التهيئة والتشغيل — أول مرّة  ·  Setup and run",
+      "type": "shell",
+      "command": "./infra/scripts/setup.sh",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true
+      },
+      "detail": "يجهّز كل شي من الصفر ويشغّله: .env، قاعدة البيانات، الحزم، الهجرات، المحتوى، الخدمات."
+    },
+    {
       "label": "الحالة: وين وصلت؟  ·  Status report",
       "type": "shell",
       "command": "./infra/scripts/status.sh",
