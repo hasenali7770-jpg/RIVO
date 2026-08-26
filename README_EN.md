@@ -75,6 +75,10 @@ so the output is safe to paste anywhere.
 
 ## Running it from VS Code
 
+To run Claude Code itself inside VS Code, so it works directly on your machine
+rather than in a cloud container:
+**[ربط Claude بـ VS Code](./docs/getting-started/CLAUDE_IN_VSCODE_AR.md)** (Arabic).
+
 Step-by-step, from cloning to a running app — Docker or native, Windows, macOS
 or Linux: **[دليل التشغيل من VS Code](./docs/getting-started/VSCODE_AR.md)**
 (Arabic). The workspace ships run configurations and tasks, so most of it is

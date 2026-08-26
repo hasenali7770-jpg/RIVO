@@ -71,6 +71,9 @@ docs/          التوثيق الكامل، انظر الجدول في آخر �
 مباشر — لويندوز وماك ولينكس:
 **[دليل التشغيل من VS Code](./docs/getting-started/VSCODE_AR.md)**
 
+ولربط Claude نفسه بـVS Code حتى يشتغل مباشرة على ملفاتك:
+**[ربط Claude بـ VS Code](./docs/getting-started/CLAUDE_IN_VSCODE_AR.md)**
+
 المشروع يحمل إعدادات تشغيل ومهام جاهزة، فأغلب الخطوات تصير من
 `Ctrl+Shift+P` ← `Tasks: Run Task`.
 
