@@ -320,8 +320,33 @@ export class MapboxService {
         const body = await response.text().catch(() => '');
         // The token is in the query string, so the URL is never logged.
         this.logger.error(`Mapbox ${operation} failed: HTTP ${response.status} ${body.slice(0, 200)}`);
-        if (response.status === 401 || response.status === 403) {
+
+        if (response.status === 401) {
           throw AppError.notConfigured('Mapbox (token rejected)', 'MAPBOX_SECRET_TOKEN');
+        }
+
+        // A 403 is ambiguous and the two causes need opposite responses. Mapbox
+        // sends one when a token is restricted to other URLs or lacks a scope —
+        // rotate the token. A corporate firewall or egress proxy sends one when
+        // api.mapbox.com is not on its allowlist — and then the token is fine,
+        // so telling an operator to replace it sends them the wrong way.
+        if (response.status === 403) {
+          if (/allowlist|not allowed|blocked|egress|proxy/i.test(body)) {
+            throw AppError.badGateway({
+              message:
+                'api.mapbox.com is being blocked before the request reaches Mapbox — the network, not the token. ' +
+                `The blocker said: ${body.slice(0, 160)}`,
+              messageAr: 'تعذّر الوصول إلى خدمة الخرائط من هذا الخادم. يرجى المحاولة لاحقاً.',
+            });
+          }
+          throw AppError.notConfigured('Mapbox (token rejected)', 'MAPBOX_SECRET_TOKEN');
+        }
+
+        if (response.status >= 500) {
+          throw AppError.badGateway({
+            message: `Mapbox is returning HTTP ${response.status}. This is an outage on their side, not a configuration fault.`,
+            messageAr: 'خدمة الخرائط غير متاحة حالياً. يرجى المحاولة لاحقاً.',
+          });
         }
         if (response.status === 429) {
           throw AppError.tooManyRequests({
