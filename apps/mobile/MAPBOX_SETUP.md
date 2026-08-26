@@ -79,6 +79,21 @@ environment.
 
 ---
 
+## Check the tokens actually work
+
+```bash
+export MAPBOX_PUBLIC_TOKEN=pk....
+export MAPBOX_SECRET_TOKEN=sk....
+./infra/scripts/verify-mapbox.sh
+```
+
+Calls place search, reverse geocoding and traffic-aware routing, and checks the
+SDK download endpoint that Gradle and CocoaPods authenticate against. Worth
+running before a demonstration rather than discovering a missing scope during
+one.
+
+---
+
 ## Free tier
 
 Your account overview shows the allowances. At the time of writing: 50,000 web
