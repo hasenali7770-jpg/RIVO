@@ -1,0 +1,59 @@
+# Secrets — never commit
+.env
+.env.*
+!.env.example
+*.pem
+*.p12
+*.keystore
+*.jks
+key.properties
+service-account*.json
+
+# Node
+node_modules/
+dist/
+build/
+.next/
+out/
+coverage/
+*.tsbuildinfo
+.turbo/
+
+# Flutter / Dart
+apps/mobile/.dart_tool/
+apps/mobile/.flutter-plugins
+apps/mobile/.flutter-plugins-dependencies
+apps/mobile/build/
+apps/mobile/ios/Pods/
+apps/mobile/ios/.symlinks/
+apps/mobile/android/.gradle/
+apps/mobile/android/local.properties
+apps/mobile/.packages
+
+# Editors / OS
+.DS_Store
+.idea/
+# VS Code: the shared workspace setup is committed so everyone gets the same
+# run configurations, tasks and recommended extensions. Personal settings are not.
+.vscode/*
+!.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/settings.json
+!.vscode/tasks.json
+*.swp
+
+# Local runtime
+*.log
+tmp/
+.pgdata/
+
+# Flutter platform build output and signing material
+apps/mobile/android/key.properties
+apps/mobile/android/local.properties
+apps/mobile/android/.gradle/
+apps/mobile/ios/Flutter/Generated.xcconfig
+apps/mobile/ios/Flutter/flutter_export_environment.sh
+apps/mobile/.flutter-plugins*
+
+# Redis snapshot, written by redis-server when it is started from this directory
+dump.rdb

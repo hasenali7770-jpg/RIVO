@@ -1,0 +1,14 @@
+# Release signing for the RIVO Android app.
+#
+# Copy to android/key.properties and fill in. NEVER commit the real file or the
+# keystore — both are gitignored. Losing this keystore means the app can never be
+# updated on the Play Store again, so the client must keep an offline backup.
+#
+# Generate the keystore (run once, keep the output safe):
+#   keytool -genkey -v -keystore ~/rivo-release.jks \
+#     -keyalg RSA -keysize 2048 -validity 10000 -alias rivo
+
+storePassword=
+keyPassword=
+keyAlias=rivo
+storeFile=/absolute/path/to/rivo-release.jks

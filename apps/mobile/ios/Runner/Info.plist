@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CADisableMinimumFrameDurationOnPhone</key>
+	<true/>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<key>CFBundleDisplayName</key>
+	<string>RIVO</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>rivo</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>$(FLUTTER_BUILD_NAME)</string>
+	<key>CFBundleSignature</key>
+	<string>????</string>
+	<key>CFBundleVersion</key>
+	<string>$(FLUTTER_BUILD_NUMBER)</string>
+	<key>LSRequiresIPhoneOS</key>
+	<true/>
+	<key>UIApplicationSceneManifest</key>
+	<dict>
+		<key>UIApplicationSupportsMultipleScenes</key>
+		<false/>
+		<key>UISceneConfigurations</key>
+		<dict>
+			<key>UIWindowSceneSessionRoleApplication</key>
+			<array>
+				<dict>
+					<key>UISceneClassName</key>
+					<string>UIWindowScene</string>
+					<key>UISceneConfigurationName</key>
+					<string>flutter</string>
+					<key>UISceneDelegateClassName</key>
+					<string>$(PRODUCT_MODULE_NAME).SceneDelegate</string>
+					<key>UISceneStoryboardFile</key>
+					<string>Main</string>
+				</dict>
+			</array>
+		</dict>
+	</dict>
+	<key>UIApplicationSupportsIndirectInputEvents</key>
+	<true/>
+	<key>UILaunchStoryboardName</key>
+	<string>LaunchScreen</string>
+	<key>UIMainStoryboardFile</key>
+	<string>Main</string>
+	<!-- Permission descriptions. Apple rejects builds whose strings are vague,
+	     and a user reading a purpose string deserves to know what RIVO actually
+	     does with the data. These are shown in Arabic because the app is
+	     Arabic-first; localised English lives in ios/Runner/en.lproj. -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>يستخدم ريفو موقعك لعرض موقعك على الخريطة، وحساب أسرع مسار، والإبلاغ عن حالة الطريق.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>يستخدم ريفو موقعك أثناء استخدام التطبيق فقط، لعرض موقعك وحساب المسار.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>يحتاج ريفو إلى الكاميرا لالتقاط صور وفيديو العقار الذي تريد نشره.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>يحتاج ريفو إلى الوصول لمكتبة الصور لاختيار صور وفيديو العقار.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>يحفظ ريفو الصور التي تختارها لإعلان العقار.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>يستخدم ريفو الميكروفون فقط عند تسجيل فيديو للعقار.</string>
+
+	<!-- RTL: Arabic is the primary language, so the app ships right-to-left. -->
+	<key>CFBundleDevelopmentRegion</key>
+	<string>ar</string>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>ar</string>
+		<string>en</string>
+	</array>
+
+	<!-- Deep links: rivo://property/<id>, rivo://payment/return -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>com.rivo.app</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>rivo</string>
+			</array>
+		</dict>
+	</array>
+
+	<!-- Schemes the contact buttons open. Without this, canLaunchUrl returns
+	     false on iOS and the buttons would silently do nothing. -->
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>tel</string>
+		<string>https</string>
+		<string>whatsapp</string>
+	</array>
+
+	<!-- Portrait only: the map HUD, the listing wizard and the reels feed are
+	     all designed vertically, and a rotating navigation screen is unhelpful
+	     while driving. -->
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+	</array>
+	<key>UISupportedInterfaceOrientations~ipad</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationPortraitUpsideDown</string>
+	</array>
+</dict>
+</plist>

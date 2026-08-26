@@ -1,0 +1,257 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop, 'claude/**']
+  pull_request:
+    branches: [main, develop]
+
+concurrency:
+  # A new push supersedes an in-flight run on the same ref; nobody needs the
+  # result for a commit that has already been replaced.
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '22'
+
+jobs:
+  api:
+    name: API — lint, typecheck, test, migrations
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        # The same PostGIS image docker-compose uses, so CI proves the extension
+        # is present rather than assuming it.
+        image: postgis/postgis:16-3.4
+        env:
+          POSTGRES_USER: rivo
+          POSTGRES_PASSWORD: rivo_ci
+          POSTGRES_DB: rivo_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U rivo -d rivo_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+      redis:
+        image: redis:7-alpine
+        ports: ['6379:6379']
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://rivo:rivo_ci@localhost:5432/rivo_test?schema=public
+      TEST_DATABASE_URL: postgresql://rivo:rivo_ci@localhost:5432/rivo_test?schema=public
+      REDIS_URL: redis://localhost:6379
+      APP_ENV: test
+      API_BASE_URL: http://localhost:3000
+      ADMIN_URL: http://localhost:3002
+      # CI-only values. Long enough to satisfy the schema's minimum, and
+      # meaningless outside this ephemeral runner.
+      JWT_ACCESS_SECRET: ci-only-access-secret-value-not-used-in-any-deployment
+      JWT_REFRESH_SECRET: ci-only-refresh-secret-value-not-used-in-any-deploy
+      OTP_PROVIDER: console
+      PAYMENT_PROVIDER: manual
+      AI_PROVIDER: none
+      LOG_LEVEL: silent
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --workspaces --include-workspace-root
+
+      - name: Build shared packages
+        run: |
+          npm run build -w @rivo/config
+          npm run build -w @rivo/contracts
+
+      - name: Generate Prisma client
+        run: npx prisma generate --schema apps/api/prisma/schema.prisma
+
+      - name: Migrations run on an empty database
+        # The Definition of Done requires this explicitly: a fresh database must
+        # reach the current schema from nothing.
+        run: npx prisma migrate deploy --schema apps/api/prisma/schema.prisma
+
+      - name: Verify PostGIS objects were created
+        # A migration that "succeeds" without the spatial indexes would leave
+        # every map query on a sequential scan, so their presence is asserted.
+        run: |
+          GIST=$(psql "$DATABASE_URL" -tAc "SELECT count(*) FROM pg_indexes WHERE schemaname='public' AND indexdef ILIKE '%gist%';")
+          CHECKS=$(psql "$DATABASE_URL" -tAc "SELECT count(*) FROM pg_constraint WHERE contype='c' AND connamespace='public'::regnamespace;")
+          echo "GiST indexes: $GIST, CHECK constraints: $CHECKS"
+          test "$GIST" -ge 5 || { echo "::error::Expected at least 5 GiST indexes, found $GIST"; exit 1; }
+          test "$CHECKS" -ge 15 || { echo "::error::Expected at least 15 CHECK constraints, found $CHECKS"; exit 1; }
+        env:
+          PGPASSWORD: rivo_ci
+
+      - name: Lint
+        run: npx eslint "apps/api/src/**/*.ts" "apps/api/test/**/*.ts"
+
+      - name: Typecheck
+        run: npm run typecheck -w @rivo/api
+
+      - name: Unit tests
+        run: npm run test -w @rivo/api
+
+      - name: End-to-end tests
+        run: npm run test:e2e -w @rivo/api
+
+      - name: Build
+        run: npm run build -w @rivo/api
+
+      - name: Acceptance run against the built API
+        # The Master Plan §21 checklist, executed against a real server rather
+        # than asserted. This is what catches a regression in a business rule
+        # that unit tests would not — the 8-18 photo range, the 3,000 IQD fee,
+        # who may approve a listing, whether a forged webhook can settle a
+        # payment. The Mapbox checks report SKIP here; everything else runs.
+        #
+        # On its own database: the e2e suite leaves admin accounts behind, and
+        # the seed refuses to create a bootstrap admin when any admin already
+        # exists — correctly, but it would leave this step unable to sign in.
+        run: |
+          # The init migration creates postgis, pgcrypto and pg_trgm itself.
+          psql "postgresql://rivo:rivo_ci@localhost:5432/postgres" -c 'CREATE DATABASE rivo_acceptance;'
+          DATABASE_URL="$ACCEPTANCE_DATABASE_URL" \
+            npx prisma migrate deploy --schema apps/api/prisma/schema.prisma
+          DATABASE_URL="$ACCEPTANCE_DATABASE_URL" APP_ENV=development \
+            npm run seed -w @rivo/api
+
+          DATABASE_URL="$ACCEPTANCE_DATABASE_URL" APP_ENV=development \
+            node apps/api/dist/main.js &
+          API_PID=$!
+          for _ in $(seq 1 30); do
+            curl -sf http://localhost:3000/api/v1/health >/dev/null && break
+            sleep 2
+          done
+
+          set +e
+          DATABASE_URL="$ACCEPTANCE_DATABASE_URL" ./infra/scripts/acceptance.sh
+          RESULT=$?
+          set -e
+          kill "$API_PID" 2>/dev/null || true
+          exit "$RESULT"
+        env:
+          ACCEPTANCE_DATABASE_URL: postgresql://rivo:rivo_ci@localhost:5432/rivo_acceptance?schema=public
+          PORT: '3000'
+          ADMIN_BOOTSTRAP_EMAIL: ci-admin@rivo.local
+          ADMIN_BOOTSTRAP_PASSWORD: ci-only-bootstrap-password-2026
+          PGPASSWORD: rivo_ci
+
+  admin:
+    name: Admin — lint, typecheck and build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --workspaces --include-workspace-root
+
+      - name: Build shared packages
+        run: |
+          npm run build -w @rivo/config
+          npm run build -w @rivo/contracts
+
+      - name: Lint
+        run: npm run lint -w @rivo/admin
+
+      - name: Typecheck
+        run: npm run typecheck -w @rivo/admin
+
+      - name: Build
+        run: npm run build -w @rivo/admin
+        env:
+          NEXT_PUBLIC_API_BASE_URL: http://localhost:3000
+
+  mobile:
+    name: Mobile — analyze and test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/mobile
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Resolve dependencies
+        run: flutter pub get
+
+      - name: Analyze
+        # Warnings fail the build: an Arabic-first app with a layout warning is
+        # a shipping defect, not a note.
+        run: flutter analyze --fatal-infos --fatal-warnings
+
+      - name: Test
+        run: flutter test
+
+  docker:
+    name: Docker — API image builds
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build API image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/api/Dockerfile
+          target: runtime
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  security:
+    name: Security — secrets and dependencies
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: No committed .env or signing material
+        run: |
+          # .env.example is the only env file that may ever be committed.
+          if git ls-files | grep -E '(^|/)\.env($|\.)' | grep -v '\.env\.example'; then
+            echo "::error::A .env file is committed. Remove it and rotate every value it contained."
+            exit 1
+          fi
+          if git ls-files | grep -E '\.(jks|keystore|p12|pem|mobileprovision)$|key\.properties$'; then
+            echo "::error::Signing material is committed. Remove it and regenerate the key."
+            exit 1
+          fi
+          echo "No committed secrets found."
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --workspaces --include-workspace-root
+
+      - name: Audit dependencies
+        # Advisory: a new upstream advisory should not block an unrelated fix
+        # from shipping, but it must be visible in the run.
+        run: npm audit --audit-level=high || echo "::warning::npm audit reported findings — review before release"

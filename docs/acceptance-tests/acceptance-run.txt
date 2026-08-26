@@ -1,0 +1,80 @@
+RIVO acceptance run  2026-08-25T22:33:04Z  api=http://localhost:3000/api/v1
+
+Darcom — listing lifecycle
+  PASS  listing created (reference RV-ZYZYVY)
+  PASS  0 photos cannot be submitted
+  PASS  photo_count trigger tracks uploads (7)
+  PASS  7 photos cannot be submitted
+  PASS  8 photos can proceed
+  PASS  submitted listing waits for payment
+  PASS  18 photos are accepted
+  PASS  19 photos are refused by the database, not only the API
+  PASS  original and enhanced photos are stored as separate rows
+  PASS  an enhanced photo cannot exist without its original
+
+Darcom — Reels
+  PASS  a 720p Reel cannot be published
+  PASS  a 1080x1920 Reel passes validation (the rule is on the short edge)
+  PASS  a Reel must be linked to exactly one property
+
+Payments
+  PASS  listing fee is exactly 3,000 IQD
+  PASS  an unpaid listing cannot be published
+  PASS  a webhook with a bad signature cannot settle a payment
+  PASS  the forged webhook left the payment PENDING
+  PASS  a moderator cannot settle a payment
+  PASS  finance can settle a payment received offline
+  PASS  a paid listing enters admin moderation
+
+Moderation and RBAC
+  PASS  support cannot approve a listing
+  PASS  finance cannot approve a listing
+  PASS  an admin route rejects no token
+  PASS  a moderator can reject with a reason
+  PASS  a rejection without a reason is refused
+  PASS  the rejection reason is visible to the seller
+  PASS  a moderator can approve a paid listing
+  PASS  admin approval publishes the listing
+
+Search
+  PASS  the published listing appears in an anonymous search
+  PASS  the sale/rent filter excludes it from rentals
+  PASS  the property-type filter works
+  PASS  PostGIS radius search finds it within 3 km
+  PASS  radius search excludes it from 400 km away
+  PASS  map pins endpoint answers for a viewport
+
+Maps and traffic
+  SKIP  destination search returns locations — set MAPBOX_SECRET_TOKEN
+  SKIP  a traffic-aware route is calculated — set MAPBOX_SECRET_TOKEN
+  SKIP  route ETA and distance are returned — set MAPBOX_SECRET_TOKEN
+  SKIP  an alternative route is offered — set MAPBOX_SECRET_TOKEN
+  PASS  maps refuse clearly when unconfigured instead of returning stub data
+  PASS  an incident report is saved with coordinates
+  PASS  the incident's coordinates round-trip through PostGIS
+  PASS  a new reporter's first report is held for review
+  PASS  a moderator can publish a held report
+  PASS  the incident appears to a nearby driver
+  PASS  the incident does not appear 400 km away
+  PASS  the reporter is not identified to other drivers
+  PASS  a moderator can take a false report off the map
+  PASS  a removed report disappears from the map
+
+Privacy
+  PASS  raw telemetry carries no account identifier
+  PASS  telemetry is refused for an account that has not opted in
+  PASS  demo content is labelled in the schema
+
+Security
+  PASS  the OTP endpoint is rate-limited
+  PASS  the throttled response is bilingual
+  PASS  the API returns documented validation errors
+  PASS  validation errors name the offending fields
+  PASS  uploads validate content type and size
+  PASS  the audit trail refuses UPDATE
+  PASS  the audit trail refuses DELETE
+  PASS  the approval is recorded against a named admin
+
+Result
+  55 passed, 0 failed, 4 skipped
+
