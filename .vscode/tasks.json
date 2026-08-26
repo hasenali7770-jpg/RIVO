@@ -2,11 +2,30 @@
   "version": "2.0.0",
   "tasks": [
     {
+      "label": "الحالة: وين وصلت؟  ·  Status report",
+      "type": "shell",
+      "command": "./infra/scripts/status.sh",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true
+      },
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "detail": "يفحص الأدوات والإعدادات وقاعدة البيانات والخدمات، ويطبع تقريراً آمناً للنسخ."
+    },
+    {
       "label": "Demo: run the whole thing",
       "type": "shell",
       "command": "./infra/scripts/demo.sh",
       "problemMatcher": [],
-      "presentation": { "reveal": "always", "panel": "dedicated" },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      },
       "detail": "Populated marketplace, admin dashboard, sample photos. No paid account needed."
     },
     {
@@ -59,14 +78,21 @@
       "label": "Check: everything (typecheck, lint, tests)",
       "type": "shell",
       "command": "npm run typecheck && npm run lint && npm test",
-      "group": { "kind": "test", "isDefault": true },
-      "problemMatcher": ["$tsc"]
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "problemMatcher": [
+        "$tsc"
+      ]
     },
     {
       "label": "Mobile: analyze and test",
       "type": "shell",
       "command": "flutter analyze && flutter test",
-      "options": { "cwd": "${workspaceFolder}/apps/mobile" },
+      "options": {
+        "cwd": "${workspaceFolder}/apps/mobile"
+      },
       "problemMatcher": []
     },
     {

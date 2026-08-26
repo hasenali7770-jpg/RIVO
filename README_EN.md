@@ -53,6 +53,16 @@ docs/
 
 ---
 
+## Where does this stand?
+
+```bash
+./infra/scripts/status.sh
+```
+
+Reports on tools, configuration, database and running services: what is ready,
+what is missing, and the command that fixes each gap. Prints no secret values,
+so the output is safe to paste anywhere.
+
 ## Running it from VS Code
 
 Step-by-step, from cloning to a running app — Docker or native, Windows, macOS
